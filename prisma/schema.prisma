@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("PRISMA_DATABASE_URL")
+}
+
+model User {
+  id BigInt @id
+
+  username String?
+
+  experience BigInt @default(0)
+
+  moderations ModerationLog[] @relation(name: "moderator")
+  offences    ModerationLog[] @relation(name: "offender")
+  donations   Donation[]
+
+  starboardMessages     StarboardMessage[]
+  starboardMessageStars StarboardMessageStar[]
+
+  tempBan     TempBan?
+  chadChannel ChadChannel?
+}
+
+enum ModerationLogType {
+  TIME_OUT
+  KICK
+  BAN
+  UNBAN
+  UNTIME_OUT
+  TEMP_BAN
+}
+
+model ModerationLog {
+  id BigInt @id @default(autoincrement())
+
+  moderator   User   @relation(name: "moderator", fields: [moderatorID], references: [id], onDelete: Cascade)
+  moderatorID BigInt
+
+  offender   User   @relation(name: "offender", fields: [offenderID], references: [id], onDelete: Cascade)
+  offenderID BigInt
+
+  type     ModerationLogType
+  reason   String
+  duration BigInt?
+  guildID  BigInt
+
+  createdAt DateTime @default(now())
+
+  @@index(type)
+  @@index(moderatorID)
+  @@index(offenderID)
+  @@index(createdAt(sort: Desc))
+}
+
+model StarboardMessage {
+  id BigInt @id
+
+  author   User   @relation(fields: [authorID], references: [id], onDelete: Cascade)
+  authorID BigInt
+
+  channelID BigInt
+  messageID BigInt @unique
+
+  createdAt DateTime @default(now())
+
+  context String
+
+  stars StarboardMessageStar[]
+
+  @@index(authorID)
+  @@index(messageID)
+}
+
+model StarboardMessageStar {
+  author   User   @relation(fields: [authorID], references: [id], onDelete: Cascade)
+  authorID BigInt
+
+  starboardMessage   StarboardMessage @relation(fields: [starboardMessageID], references: [id], onDelete: Cascade)
+  starboardMessageID BigInt
+
+  @@id([authorID, starboardMessageID])
+  @@index(authorID)
+  @@index(starboardMessageID)
+}
+
+model Donation {
+  id BigInt @id @default(autoincrement())
+
+  user   User   @relation(fields: [userID], references: [id], onDelete: Cascade)
+  userID BigInt
+
+  value BigInt
+  type  String
+
+  createdAt DateTime @default(now())
+
+  @@index(userID)
+  @@index([userID, createdAt(sort: Desc)])
+}
+
+model TempBan {
+  id BigInt @id @default(autoincrement())
+
+  user   User   @relation(fields: [userID], references: [id], onDelete: Cascade)
+  userID BigInt @unique
+
+  guildID BigInt
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index(userID)
+  @@index(guildID)
+  @@index(expiresAt)
+}
+
+model ChadChannel {
+  id BigInt @id
+
+  user   User   @relation(fields: [userID], references: [id], onDelete: Cascade)
+  userID BigInt @unique
+
+  createdAt DateTime @default(now())
+}
+
+model LockdownChannel {
+  id BigInt @id
+
+  locked  Boolean
+  guildID BigInt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

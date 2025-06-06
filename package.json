@@ -1,0 +1,45 @@
+{
+  "name": "community-bot",
+  "version": "2.0.0",
+  "description": "Custom Utility Bot for Dank Memer Communities",
+  "repository": "https://github.com/DankMemer/CommunityBot",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prisma-generate": "npx prisma db push",
+    "sync": "tsc && node ./dist/scripts/sync.js",
+    "wipe-redis": "tsc && node ./dist/scripts/wipe-redis.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "author": "Bartosz Król <m@badosz.com>",
+  "dependencies": {
+    "@prisma/client": "^4.14.0",
+    "@sentry/node": "^7.95.0",
+    "@types/fuzzy-search": "^2.1.2",
+    "@types/ms": "^0.7.31",
+    "axios": "^1.3.4",
+    "croner": "^5.4.1",
+    "discord.js": "^14.11.0",
+    "dotenv": "^16.0.2",
+    "fuzzy-search": "^3.2.1",
+    "globby": "^11",
+    "holy-time": "^3.4.5",
+    "mathjs": "^11.2.1",
+    "ms": "^2.1.3",
+    "openai": "^3.2.1",
+    "prisma": "4.14.0",
+    "redis": "^4.3.1",
+    "type-fest": "^2.19.0",
+    "winston": "^3.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.18",
+    "@typescript-eslint/eslint-plugin": "^5.37.0",
+    "@typescript-eslint/parser": "^5.37.0",
+    "eslint": "^8.23.1",
+    "eslint-import-resolver-node": "^0.3.6",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-unicorn": "^43.0.2",
+    "typescript": "^4.8.3"
+  }
+}

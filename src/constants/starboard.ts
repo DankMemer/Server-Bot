@@ -1,0 +1,1 @@
+export const STARBOARD_REQUIRED_STARS = 5;
