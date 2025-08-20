@@ -155,7 +155,7 @@ export abstract class Paginator {
       input.filters = interaction instanceof StringSelectMenuInteraction ? interaction.values : [];
     } else {
       input.index = Number(data[6]);
-      input.filters = data[5].split(',');
+      input.filters = data[5] ? data[5].split(',').filter(Boolean) : [];
     }
 
     const output = await this.handle(input);
