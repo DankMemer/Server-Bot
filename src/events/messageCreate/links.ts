@@ -20,6 +20,7 @@ const WHITELISTED_LINKS = [
   'discord.com/channels/682809584985178135/',
   'discord.com/channels/470337009886429194/',
   'media.tenor.com/',
+  'tenor.com/',
   'dankmemer.wiki/',
 ];
 
