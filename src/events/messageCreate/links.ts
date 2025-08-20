@@ -14,6 +14,13 @@ const WHITELISTED_CHANNELS = new Set<string>([
 ]);
 const WHITELISTED_LINKS = [
   'dankmemer.lol',
+  'www.dankmemer.lol',
+  'www.youtube.com',
+  'youtube.com',
+  'discord.com/channels/682809584985178135/',
+  'discord.com/channels/470337009886429194/',
+  'media.tenor.com/',
+  'dankmemer.wiki/',
 ];
 
 const URL_REGEX = /https?:\/\/(?:www\.)?[\w#%+.:=@~-]{1,256}\.[\d()A-Za-z]{1,6}\b[\w#%&()+./:=?@~-]*/g;
