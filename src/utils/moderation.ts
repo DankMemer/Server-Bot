@@ -4,6 +4,34 @@ import { CONFIG } from '../config';
 const LEVEL_ADMIN = 0;
 const LEVEL_NONE = -1;
 
+function canModerateUser(moderator: GuildMember, offender: GuildMember): boolean {
+  if (isAdminOrManager(offender)) {
+    return false;
+  }
+
+  if (isStaffOrTeam(offender)) {
+    return isAdminOrManager(moderator);
+  }
+
+  return true;
+}
+
+export function canBanUser(moderator: GuildMember, offender: GuildMember): boolean {
+  if (!hasBanPermission(moderator)) {
+    return false;
+  }
+
+  return canModerateUser(moderator, offender);
+}
+
+export function canKickUser(moderator: GuildMember, offender: GuildMember): boolean {
+  if (!hasKickPermission(moderator)) {
+    return false;
+  }
+
+  return canModerateUser(moderator, offender);
+}
+
 function getTimeoutHierarchyLevel(member: GuildMember): number {
   if (isAdminOrManager(member)) {
     return LEVEL_ADMIN;
@@ -49,6 +77,14 @@ function hasTimeoutPermission(member: GuildMember): boolean {
   return member.permissions.has(PermissionsBitField.Flags.ModerateMembers);
 }
 
+function hasBanPermission(member: GuildMember): boolean {
+  return member.permissions.has(PermissionsBitField.Flags.BanMembers);
+}
+
+function hasKickPermission(member: GuildMember): boolean {
+  return member.permissions.has(PermissionsBitField.Flags.KickMembers);
+}
+
 function hasAdminPermission(member: GuildMember): boolean {
   return member.permissions.has(PermissionsBitField.Flags.Administrator);
 }
@@ -65,3 +101,16 @@ function isAdminOrManager(member: GuildMember): boolean {
     member.roles.cache.has(CONFIG.ids.roles.dmo.serverManager)
   );
 }
+
+function isStaffOrTeam(member: GuildMember): boolean {
+  const staffTeamRoles = [
+    CONFIG.ids.roles.dmc.staff,
+    CONFIG.ids.roles.dmc.team,
+    CONFIG.ids.roles.dmo.staff,
+  ];
+
+  return member.roles.cache.some(role =>
+    staffTeamRoles.includes(role.id)
+  );
+}
+

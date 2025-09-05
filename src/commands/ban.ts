@@ -4,8 +4,8 @@ import HolyTime from 'holy-time';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
+import { canBanUser } from '../utils/moderation';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
-import { discordClient } from '../lib/discord-client';
 
 export class BanCommand extends Command {
   public override data = new SlashCommandBuilder()
@@ -37,18 +37,29 @@ export class BanCommand extends Command {
     );
   public override servers = [ CONFIG.ids.servers.dmc ];
   public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
-    const user = interaction.options.getUser('user', true);
+    const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
     const deleteMessageSeconds = interaction.options.getString('delete_messages', false);
 
-    const offender = interaction.guild.members.resolve(user.id)?.user ?? await discordClient.bot.users.fetch(user.id);
+    const offenderMember = interaction.guild.members.resolve(offender.id);
+    const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
-    if (!offender) {
+    if (!offenderMember) {
       return 'Could not find this member. They probably left.';
     }
 
+    if (!moderatorMember) {
+      return 'Could not find your member record.';
+    }
+
+    if (!canBanUser(moderatorMember, offenderMember)) {
+      return new EmbedBuilder()
+        .setDescription('You cannot ban this user.')
+        .setColor(Colors.RED);
+    }
+
     try {
-      await interaction.guild.members.ban(user, {
+      await interaction.guild.members.ban(offender, {
         reason: `Banned by ${interaction.user.username} | ${reason}`,
         ...(deleteMessageSeconds ? { deleteMessageSeconds: Number.parseInt(deleteMessageSeconds) / HolyTime.Units.SECOND } : {}),
       });
@@ -59,7 +70,7 @@ export class BanCommand extends Command {
     }
 
     await offender
-    	.send({
+      .send({
         embeds: [
           new EmbedBuilder()
             .addFields(
@@ -73,7 +84,7 @@ export class BanCommand extends Command {
               name: `You've been banned in ${interaction.guild.name}`,
               iconURL: interaction.guild.iconURL(),
             })
-    				.setColor(Colors.INVISIBLE),
+            .setColor(Colors.INVISIBLE),
         ],
       })
       .catch(() => null);
