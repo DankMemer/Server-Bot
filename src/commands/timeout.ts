@@ -5,6 +5,7 @@ import HolyTime from 'holy-time';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
+import { canTimeoutUser } from '../utils/moderation';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 import { DiscordTimestampFormat, formatDiscordTimestamp, parseDuration } from '../utils/time';
 
@@ -32,14 +33,25 @@ export class SupportCommand extends Command {
     );
   public override servers = [ CONFIG.ids.servers.dmc ];
   public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
-    const user = interaction.options.getUser('user', true);
+    const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
     const duration = interaction.options.getString('duration', true);
 
-    const member = interaction.guild.members.resolve(user.id);
+    const offenderMember = interaction.guild.members.resolve(offender.id);
+    const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
-    if (!member) {
+    if (!offenderMember) {
       return 'Could not find this member. They probably left.';
+    }
+
+    if (!moderatorMember) {
+      return 'Could not find your member record.';
+    }
+
+    if (!canTimeoutUser(moderatorMember, offenderMember)) {
+      return new EmbedBuilder()
+        .setDescription('You cannot timeout this user.')
+        .setColor(Colors.RED);
     }
 
     const milliseconds = parseDuration(duration);
@@ -49,7 +61,7 @@ export class SupportCommand extends Command {
     }
 
     try {
-      await member.timeout(milliseconds, reason);
+      await offenderMember.timeout(milliseconds, reason);
     } catch {
       return new EmbedBuilder()
         .setDescription('Could not timeout this member.')
@@ -58,8 +70,8 @@ export class SupportCommand extends Command {
 
     const ends = formatDiscordTimestamp(HolyTime.in(milliseconds), DiscordTimestampFormat.RELATIVE_TIME);
 
-    await member
-    	.send({
+    await offender
+      .send({
         embeds: [
           new EmbedBuilder()
             .addFields(
@@ -78,7 +90,7 @@ export class SupportCommand extends Command {
               name: `You've been timed out in ${interaction.guild.name}`,
               iconURL: interaction.guild.iconURL(),
             })
-    				.setColor(Colors.INVISIBLE),
+            .setColor(Colors.INVISIBLE),
         ],
       })
       .catch(() => null);
@@ -86,7 +98,7 @@ export class SupportCommand extends Command {
     const log = await registerModerationLog(
       ModerationLogType.TIME_OUT,
       BigInt(interaction.user.id),
-      BigInt(member.id),
+      BigInt(offender.id),
       BigInt(interaction.guildId),
       reason,
       milliseconds,
@@ -96,12 +108,12 @@ export class SupportCommand extends Command {
       new EmbedBuilder()
         .setTitle('🔇 Time Out')
         .setDescription(
-          `**Offender:** ${member.user.username} <@${member.id}>\n` +
+          `**Offender:** ${offender.username} <@${offender.id}>\n` +
           `**Reason:** ${reason}\n` +
           `**Moderator:** ${interaction.user.username} <@${interaction.user.id}>\n` +
           `**Ends:** ${formatDiscordTimestamp(HolyTime.in(milliseconds), DiscordTimestampFormat.SHORT_TIME)} (${ends})`,
         )
-        .setFooter({ text: `ID: ${member.id} | #${log.id}` })
+        .setFooter({ text: `ID: ${offender.id} | #${log.id}` })
         .setTimestamp()
         .setColor(Colors.BLUE),
     );
@@ -111,8 +123,8 @@ export class SupportCommand extends Command {
       embeds: [
         new EmbedBuilder()
           .setAuthor({
-            name: `${member.user.username} has been timed out`,
-            iconURL: member.user.avatarURL(),
+            name: `${offender.username} has been timed out`,
+            iconURL: offender.avatarURL(),
           })
           .setColor(Colors.INVISIBLE)
           .addFields(
