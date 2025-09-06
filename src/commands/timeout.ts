@@ -32,7 +32,7 @@ export class SupportCommand extends Command {
         .setRequired(true),
     );
   public override servers = [ CONFIG.ids.servers.dmc ];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string | void> => {
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
     const duration = interaction.options.getString('duration', true);
@@ -40,32 +40,55 @@ export class SupportCommand extends Command {
     const offenderMember = interaction.guild.members.resolve(offender.id);
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
+    await interaction.deferReply({ ephemeral: true });
+
     if (!offenderMember) {
-      return 'Could not find this member. They probably left.';
+      const embed = new EmbedBuilder()
+        .setDescription('Could not find this member. They probably left.')
+        .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     if (!moderatorMember) {
-      return 'Could not find your member record.';
+      const embed = new EmbedBuilder()
+        .setDescription('Could not find your member record.')
+        .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     if (!canTimeoutUser(moderatorMember, offenderMember)) {
-      return new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setDescription('You cannot timeout this user.')
         .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     const milliseconds = parseDuration(duration);
 
     if (!milliseconds) {
-      return 'You need to input a valid duration.';
+      const embed = new EmbedBuilder()
+        .setDescription('You need to input a valid duration.')
+        .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     try {
       await offenderMember.timeout(milliseconds, reason);
     } catch {
-      return new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setDescription('Could not timeout this member.')
         .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     const ends = formatDiscordTimestamp(HolyTime.in(milliseconds), DiscordTimestampFormat.RELATIVE_TIME);
@@ -118,8 +141,7 @@ export class SupportCommand extends Command {
         .setColor(Colors.BLUE),
     );
 
-    interaction.reply({
-      ephemeral: true,
+    await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setAuthor({

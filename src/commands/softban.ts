@@ -38,7 +38,7 @@ export class SoftbanCommand extends Command {
 
   public override servers = [ CONFIG.ids.servers.dmc ];
 
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string | void> => {
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
     const days = interaction.options.getInteger('days', false) ?? 1;
@@ -46,18 +46,33 @@ export class SoftbanCommand extends Command {
     const offenderMember = interaction.guild.members.resolve(offender.id);
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
+    await interaction.deferReply({ ephemeral: true });
+
     if (!offenderMember) {
-      return 'Could not find this member. They probably left.';
+      const embed = new EmbedBuilder()
+        .setDescription('Could not find this member. They probably left.')
+        .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     if (!moderatorMember) {
-      return 'Could not find your member record.';
+      const embed = new EmbedBuilder()
+        .setDescription('Could not find your member record.')
+        .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     if (!canBanUser(moderatorMember, offenderMember)) {
-      return new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setDescription('You cannot softban this user.')
         .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     const deleteMessageSeconds = days * HolyTime.Units.DAY / HolyTime.Units.SECOND;
@@ -73,9 +88,12 @@ export class SoftbanCommand extends Command {
         `Softban unban by ${interaction.user.username} | ${reason}`
       );
     } catch (error) {
-      return new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setDescription('Could not softban this member. Make sure I have the necessary permissions.')
         .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     await offender
@@ -126,23 +144,27 @@ export class SoftbanCommand extends Command {
         .setColor(Colors.ORANGE),
     );
 
-    return new EmbedBuilder()
-      .setAuthor({
-        name: `${offenderMember.user.username} has been softbanned`,
-        iconURL: offenderMember.user.avatarURL(),
-      })
-      .setColor(Colors.INVISIBLE)
-      .addFields(
-        {
-          name: 'Reason',
-          value: reason,
-          inline: false,
-        },
-        {
-          name: 'Days of messages deleted',
-          value: days.toString(),
-          inline: false,
-        },
-      );
+    await interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setAuthor({
+            name: `${offenderMember.user.username} has been softbanned`,
+            iconURL: offenderMember.user.avatarURL(),
+          })
+          .setColor(Colors.INVISIBLE)
+          .addFields(
+            {
+              name: 'Reason',
+              value: reason,
+              inline: false,
+            },
+            {
+              name: 'Days of messages deleted',
+              value: days.toString(),
+              inline: false,
+            },
+          ),
+      ],
+    });
   };
 }
