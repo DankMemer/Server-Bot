@@ -5,6 +5,11 @@ import { Colors } from '../constants/colors';
 import { Emojis } from '../constants/emojis';
 import { getUser } from '../utils/db';
 
+enum InteractionType {
+  FILTER = 'f',
+  NAVIGATION = 'n',
+}
+
 export type PaginatorContext = {
   index: number;
   interaction: Interaction;
@@ -50,19 +55,19 @@ export abstract class Paginator {
       },
     });
 
-    const rows: Array<ActionRowBuilder<ButtonBuilder|StringSelectMenuBuilder>> = [];
+    const rows: Array<ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>> = [];
 
     if (Object.keys(this.filters ?? {}).length > 0) {
       rows.push(new ActionRowBuilder<StringSelectMenuBuilder>()
         .addComponents(
-        	new StringSelectMenuBuilder()
+          new StringSelectMenuBuilder()
             .setCustomId(`pg:f:${this.id}:${interaction.user.id}:${payload}`)
             .setMinValues(0)
             .setMaxValues(Object.keys(this.filters).length)
             .addOptions(
               Object
                 .entries(this.filters)
-                .map(([ value, label ]) => ({ label, value, default: filters.includes(value) })),
+                .map(([value, label]) => ({ label, value, default: filters.includes(value) })),
             ),
         ),
       );
@@ -83,6 +88,11 @@ export abstract class Paginator {
           .setStyle(ButtonStyle.Primary)
           .setDisabled(currentPage <= 1),
         new ButtonBuilder()
+          .setEmoji(Emojis.refresh)
+          .setCustomId(`${prefix}:${index}.0000`)
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(false),
+        new ButtonBuilder()
           .setEmoji(Emojis.arrowRight)
           .setCustomId(`${prefix}:${index + this.itemsPerPage}.00`)
           .setStyle(ButtonStyle.Primary)
@@ -96,7 +106,7 @@ export abstract class Paginator {
     );
 
     return {
-      embeds: [ paginatorEmbed ],
+      embeds: [paginatorEmbed],
       components: rows,
     };
   }
@@ -151,11 +161,18 @@ export abstract class Paginator {
       payload,
     };
 
-    if (type === 'f') {
-      input.filters = interaction instanceof StringSelectMenuInteraction ? interaction.values : [];
-    } else {
-      input.index = Number(data[6]);
-      input.filters = data[5] ? data[5].split(',').filter(Boolean) : [];
+    switch (type) {
+      case InteractionType.FILTER:
+        input.filters = interaction instanceof StringSelectMenuInteraction ? interaction.values : [];
+        break;
+
+      case InteractionType.NAVIGATION:
+        input.index = Number(data[6]);
+        input.filters = data[5] ? data[5].split(',').filter(Boolean) : [];
+        break;
+
+      default:
+        break;
     }
 
     const output = await this.handle(input);
