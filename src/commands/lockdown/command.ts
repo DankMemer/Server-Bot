@@ -53,9 +53,14 @@ export class LockdownCommand extends Command {
       option
         .setName('server')
         .setDescription('Toggle server lockdown'),
+    )
+    .addSubcommand(option =>
+      option
+        .setName('prune')
+        .setDescription('Remove invalid channel entries from lockdown system'),
     );
 
-  public override servers = [ CONFIG.ids.servers.dmc ];
+  public override servers = [CONFIG.ids.servers.dmc];
 
   public override execute = async ({ interaction, userEntry }: CommandContext): Promise<void | string> => {
     const subcommand = interaction.options.getSubcommand();
@@ -194,6 +199,53 @@ export class LockdownCommand extends Command {
                   .setLabel('Confirm')
                   .setCustomId(`lockdown-confirm:${userEntry.id}`)
                   .setStyle(ButtonStyle.Success),
+              ),
+          ],
+        });
+      }
+
+      case 'prune': {
+        const lockdownChannels = await prismaClient.lockdownChannel.findMany({
+          where: {
+            guildID: BigInt(interaction.guild.id),
+          },
+        });
+
+        if (lockdownChannels.length === 0) {
+          return 'There are no channels in the lockdown system to prune!';
+        }
+
+        const deletedChannels = [];
+        for (const lockdownChannel of lockdownChannels) {
+          const discordChannel = interaction.guild.channels.resolve(lockdownChannel.id.toString());
+          if (!discordChannel) {
+            deletedChannels.push(lockdownChannel);
+          }
+        }
+
+        if (deletedChannels.length === 0) {
+          return 'No invalid channels found in lockdown system. All channels are valid!';
+        }
+
+        const channelList = deletedChannels
+          .map(channel => `<#${channel.id}> (\`${channel.id}\`)`)
+          .join('\n');
+
+        return void interaction.reply({
+          embeds: [
+            new EmbedBuilder({
+              title: 'Confirm Lockdown Prune',
+              description: `These ${deletedChannels.length} invalid channel${deletedChannels.length === 1 ? '' : 's'} will be removed from lockdown system:\n\n${channelList}\n\n**Are you sure?**`,
+              color: Colors.ORANGE,
+            }),
+          ],
+          components: [
+            new ActionRowBuilder<ButtonBuilder>()
+              .addComponents(
+                new ButtonBuilder()
+                  .setLabel('Confirm Prune')
+                  .setCustomId(`lockdown-prune-confirm:${userEntry.id}:${deletedChannels.map(c => c.id).join(',')}`)
+                  .setStyle(ButtonStyle.Danger),
               ),
           ],
         });
