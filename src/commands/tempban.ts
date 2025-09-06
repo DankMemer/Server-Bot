@@ -34,7 +34,7 @@ export class TemporaryBanCommand extends Command {
     );
 
   public override servers = [ CONFIG.ids.servers.dmc ];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string | void> => {
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
     const duration = interaction.options.getString('duration', true);
@@ -42,24 +42,44 @@ export class TemporaryBanCommand extends Command {
     const offenderMember = interaction.guild.members.resolve(offender.id);
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
+    await interaction.deferReply({ ephemeral: true });
+
     if (!offenderMember) {
-      return 'Could not find this member. They probably left.';
+      const embed = new EmbedBuilder()
+        .setDescription('Could not find this member. They probably left.')
+        .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     if (!moderatorMember) {
-      return 'Could not find your member record.';
+      const embed = new EmbedBuilder()
+        .setDescription('Could not find your member record.')
+        .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     if (!canBanUser(moderatorMember, offenderMember)) {
-      return new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setDescription('You cannot ban this user.')
         .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     const milliseconds = parseDuration(duration);
 
     if (!milliseconds) {
-      return 'You need to input a valid duration.';
+      const embed = new EmbedBuilder()
+        .setDescription('You need to input a valid duration.')
+        .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     try {
@@ -67,9 +87,12 @@ export class TemporaryBanCommand extends Command {
         reason: `Temporarily Banned by ${interaction.user.username} | ${reason} | ${duration}`,
       });
     } catch {
-      return new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setDescription('Could not tempban this member.')
         .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     const expires = HolyTime.in(milliseconds);
@@ -132,8 +155,7 @@ export class TemporaryBanCommand extends Command {
         .setColor(Colors.RED),
     );
 
-    interaction.reply({
-      ephemeral: true,
+    await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setAuthor({
