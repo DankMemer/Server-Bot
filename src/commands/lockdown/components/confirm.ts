@@ -3,6 +3,7 @@ import { Colors } from '../../../constants/colors';
 import { prismaClient } from '../../../lib/prisma-client';
 import { Component, ComponentContext } from '../../../structures/component';
 import { ephemeralResponse } from '../../../utils/format';
+import { canManageLockdown } from '../../../utils/moderation';
 
 export class LockdownConfirmComponent extends Component {
   public override id = 'lockdown-confirm';
@@ -10,6 +11,12 @@ export class LockdownConfirmComponent extends Component {
   public override async execute({ interaction }: ComponentContext): Promise<void> {
     if (interaction.user.id !== interaction.customId.split(':')[1]) {
       return void interaction.reply(ephemeralResponse('You cannot do this.'));
+    }
+
+    const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
+    
+    if (!moderatorMember || !canManageLockdown(moderatorMember)) {
+      return void interaction.reply(ephemeralResponse('You do not have permission to manage lockdown.'));
     }
 
     await interaction.update({

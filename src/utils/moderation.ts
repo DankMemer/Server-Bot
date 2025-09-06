@@ -40,6 +40,10 @@ export function canDecancer(moderator: GuildMember, target: GuildMember): boolea
   return canModerateUser(moderator, target);
 }
 
+export function canManageLockdown(member: GuildMember): boolean {
+  return isAdminOrManager(member);
+}
+
 function getTimeoutHierarchyLevel(member: GuildMember): number {
   if (isAdminOrManager(member)) {
     return LEVEL_ADMIN;

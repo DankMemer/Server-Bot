@@ -3,6 +3,7 @@ import { CONFIG } from '../../config';
 import { Colors } from '../../constants/colors';
 import { prismaClient } from '../../lib/prisma-client';
 import { Command, CommandContext } from '../../structures/command';
+import { canManageLockdown } from '../../utils/moderation';
 
 export class LockdownCommand extends Command {
   public override data = new SlashCommandBuilder()
@@ -62,7 +63,19 @@ export class LockdownCommand extends Command {
 
   public override servers = [CONFIG.ids.servers.dmc];
 
-  public override execute = async ({ interaction, userEntry }: CommandContext): Promise<void | string> => {
+  public override execute = async ({ interaction, userEntry }: CommandContext): Promise<void | string | EmbedBuilder> => {
+    const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
+    
+    if (!moderatorMember) {
+      return 'Could not find your member record.';
+    }
+
+    if (!canManageLockdown(moderatorMember)) {
+      return new EmbedBuilder()
+        .setDescription('You do not have permission to manage lockdown. You need Administrator permissions, Manage Server permissions, or the Server Manager role.')
+        .setColor(Colors.RED);
+    }
+
     const subcommand = interaction.options.getSubcommand();
 
     switch (subcommand) {
