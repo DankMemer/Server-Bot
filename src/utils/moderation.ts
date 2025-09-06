@@ -32,22 +32,30 @@ export function canKickUser(moderator: GuildMember, offender: GuildMember): bool
   return canModerateUser(moderator, offender);
 }
 
+export function canDecancer(moderator: GuildMember, target: GuildMember): boolean {
+  if (!hasManageNicknamesPermission(moderator)) {
+    return false;
+  }
+
+  return canModerateUser(moderator, target);
+}
+
 function getTimeoutHierarchyLevel(member: GuildMember): number {
   if (isAdminOrManager(member)) {
     return LEVEL_ADMIN;
   }
 
   const hierarchyLevels = {
-    [ CONFIG.ids.roles.dmc.communityManager ]: 1, // Community Manager (DMC only)
-    [ CONFIG.ids.roles.dmc.moderator ]: 2,        // Moderator
-    [ CONFIG.ids.roles.dmo.moderator ]: 2,        // Moderator (same level as DMC)
-    [ CONFIG.ids.roles.dmc.trialModerator ]: 3,   // Trial Moderator (lowest)
-    [ CONFIG.ids.roles.dmo.trialModerator ]: 3,   // Trial Moderator (lowest)
+    [CONFIG.ids.roles.dmc.communityManager]: 1, // Community Manager (DMC only)
+    [CONFIG.ids.roles.dmc.moderator]: 2,        // Moderator
+    [CONFIG.ids.roles.dmo.moderator]: 2,        // Moderator (same level as DMC)
+    [CONFIG.ids.roles.dmc.trialModerator]: 3,   // Trial Moderator (lowest)
+    [CONFIG.ids.roles.dmo.trialModerator]: 3,   // Trial Moderator (lowest)
   };
 
   for (const roleId of member.roles.cache.keys()) {
     if (roleId in hierarchyLevels) {
-      return hierarchyLevels[ roleId ];
+      return hierarchyLevels[roleId];
     }
   }
 
@@ -91,6 +99,10 @@ function hasAdminPermission(member: GuildMember): boolean {
 
 function hasManagerPermission(member: GuildMember): boolean {
   return member.permissions.has(PermissionsBitField.Flags.ManageGuild);
+}
+
+function hasManageNicknamesPermission(member: GuildMember): boolean {
+  return member.permissions.has(PermissionsBitField.Flags.ManageNicknames);
 }
 
 function isAdminOrManager(member: GuildMember): boolean {

@@ -13,6 +13,7 @@ const MODERATION_LOG_MAP: Record<ModerationLogType, string> = {
   [ModerationLogType.UNTIME_OUT]: '🔊 Untime Out',
   [ModerationLogType.TEMP_BAN]: '⏱️ Temp Ban',
   [ModerationLogType.SOFT_BAN]: '🧹 Soft Ban',
+  [ModerationLogType.DECANCER]: '☣️ Decancer',
 };
 
 export class ModerationLogListPaginator extends Paginator {
@@ -26,6 +27,7 @@ export class ModerationLogListPaginator extends Paginator {
     UNTIME_OUT: 'Untime Out',
     TEMP_BAN: 'Temp Ban',
     SOFT_BAN: 'Soft Ban',
+    DECANCER: 'Decancer',
   };
 
   public async handle({ payload, interaction, filters }: PaginatorContext): Promise<PaginatorOutput> {

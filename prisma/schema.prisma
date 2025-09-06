@@ -33,6 +33,7 @@ enum ModerationLogType {
   UNTIME_OUT
   TEMP_BAN
   SOFT_BAN
+  DECANCER
 }
 
 model ModerationLog {
