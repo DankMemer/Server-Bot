@@ -44,6 +44,14 @@ export function canManageLockdown(member: GuildMember): boolean {
   return isAdminOrManager(member);
 }
 
+export function canFreezeNickname(moderator: GuildMember, offender: GuildMember): boolean {
+  if (!hasManageNicknamesPermission(moderator)) {
+    return false;
+  }
+
+  return moderator.roles.highest.position > offender.roles.highest.position;
+}
+
 function getTimeoutHierarchyLevel(member: GuildMember): number {
   if (isAdminOrManager(member)) {
     return LEVEL_ADMIN;

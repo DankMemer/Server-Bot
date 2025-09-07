@@ -14,6 +14,8 @@ const MODERATION_LOG_MAP: Record<ModerationLogType, string> = {
   [ModerationLogType.TEMP_BAN]: '⏱️ Temp Ban',
   [ModerationLogType.SOFT_BAN]: '🧹 Soft Ban',
   [ModerationLogType.DECANCER]: '☣️ Decancer',
+  [ModerationLogType.FREEZE_NICK]: '🧊 Freeze Nickname',
+  [ModerationLogType.UNFREEZE_NICK]: '🌊 Unfreeze Nickname',
 };
 
 export class ModerationLogListPaginator extends Paginator {
@@ -28,6 +30,8 @@ export class ModerationLogListPaginator extends Paginator {
     TEMP_BAN: 'Temp Ban',
     SOFT_BAN: 'Soft Ban',
     DECANCER: 'Decancer',
+    FREEZE_NICK: 'Freeze Nickname',
+    UNFREEZE_NICK: 'Unfreeze Nickname',
   };
 
   public async handle({ payload, interaction, filters }: PaginatorContext): Promise<PaginatorOutput> {
