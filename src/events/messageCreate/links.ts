@@ -1,5 +1,7 @@
 import { ChannelType, Message } from 'discord.js';
 import { CONFIG } from '../../config';
+import { getAllowedUrls } from '../../utils/allowed-urls';
+import { extractUrlsFromMessage, isUrlAllowed } from '../../utils/url';
 
 const WHITELISTED_ROLES = [
   CONFIG.ids.roles.dmc.giveawayManager,
@@ -8,11 +10,13 @@ const WHITELISTED_ROLES = [
   CONFIG.ids.roles.dmc.moderator,
   CONFIG.ids.roles.dmc.team,
 ];
+
 const WHITELISTED_CHANNELS = new Set<string>([
   CONFIG.ids.channels.dmc.premium,
   CONFIG.ids.channels.dmc.premiumSupport,
 ]);
-const WHITELISTED_LINKS = [
+
+const HARDCODED_ALLOWED_LINKS = [
   'dankmemer.lol',
   'www.dankmemer.lol',
   'www.youtube.com',
@@ -24,9 +28,7 @@ const WHITELISTED_LINKS = [
   'dankmemer.wiki/',
 ];
 
-const URL_REGEX = /https?:\/\/(?:www\.)?[\w#%+.:=@~-]{1,256}\.[\d()A-Za-z]{1,6}\b[\w#%&()+./:=?@~-]*/g;
-
-export function linkHandler(message: Message): void {
+export async function linkHandler(message: Message): Promise<void> {
   if (message.guild?.id !== CONFIG.ids.servers.dmc) {
     return;
   }
@@ -43,11 +45,24 @@ export function linkHandler(message: Message): void {
     return;
   }
 
-  const links = message.content.match(URL_REGEX);
-
-  if (!links || links.every(link => WHITELISTED_LINKS.some(wl => link.startsWith(`https://${wl}`) || link.startsWith(`http://${wl}`)))) {
+  const messageUrls = extractUrlsFromMessage(message.content);
+  if (messageUrls.length === 0) {
     return;
   }
 
-  message.delete();
+  try {
+    const databaseUrls = await getAllowedUrls();
+    const allAllowedUrls = [...HARDCODED_ALLOWED_LINKS, ...databaseUrls];
+
+    const hasUnallowedUrls = messageUrls.some(url => !isUrlAllowed(url, allAllowedUrls));
+
+    if (hasUnallowedUrls) {
+      await message.delete();
+    }
+  } catch (error) {
+    console.error('Error checking allowed URLs:', error);
+
+    // On error, fall back to deleting the message (fail-safe approach)
+    await message.delete();
+  }
 }

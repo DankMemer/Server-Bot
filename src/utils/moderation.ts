@@ -52,6 +52,10 @@ export function canFreezeNickname(moderator: GuildMember, offender: GuildMember)
   return moderator.roles.highest.position > offender.roles.highest.position;
 }
 
+export function canManageAutomod(member: GuildMember): boolean {
+  return isAdminOrManager(member);
+}
+
 function getTimeoutHierarchyLevel(member: GuildMember): number {
   if (isAdminOrManager(member)) {
     return LEVEL_ADMIN;
