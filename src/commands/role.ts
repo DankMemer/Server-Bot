@@ -3,6 +3,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
+import { canAssignRole, isStaff } from '../utils/moderation';
 
 export class RoleCommand extends Command {
   public override data = new SlashCommandBuilder()
@@ -53,8 +54,10 @@ export class RoleCommand extends Command {
             .setRequired(true),
         ),
     );
-  public override servers = [ CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo ];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
+
+  public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
+
+  public override execute = async ({ interaction }: CommandContext): Promise<void> => {
     const action = interaction.options.getSubcommand();
     const role = interaction.guild.roles.cache.get(
       interaction.options.getRole('role', true).id,
@@ -62,6 +65,18 @@ export class RoleCommand extends Command {
 
     switch (action) {
       case 'info': {
+        const authorMember = interaction.guild.members.resolve(
+          interaction.user.id,
+        );
+
+        if (!authorMember || !isStaff(authorMember)) {
+          await interaction.reply({
+            content: 'You do not have permission to use this command.',
+            ephemeral: true,
+          });
+          return;
+        }
+
         await interaction.deferReply();
 
         return void await interaction.editReply({
@@ -115,19 +130,34 @@ export class RoleCommand extends Command {
         );
 
         if (role.guild.id === role.id) {
-          return '@everyone is not a valid role';
+          await interaction.reply({
+            content: '@everyone is not a valid role',
+            ephemeral: true,
+          });
+          return;
         }
 
-        if (role.rawPosition >= authorMember.roles.highest.rawPosition) {
-          return 'You cannot add this role to anyone.';
+        if (!canAssignRole(authorMember, role)) {
+          await interaction.reply({
+            content: 'You do not have permission to assign this role.',
+            ephemeral: true,
+          });
+          return;
         }
 
         try {
           await member.roles.add(role.id);
-          return `Added <@&${role.id}> to ${member}.`;
+          await interaction.reply({
+            content: `Added <@&${role.id}> to ${member}.`,
+            ephemeral: true,
+          });
         } catch {
-          return `Could not add <@&${role.id}> to ${member}.`;
+          await interaction.reply({
+            content: `Could not add <@&${role.id}> to ${member}.`,
+            ephemeral: true,
+          });
         }
+        return;
       }
 
       case 'remove': {
@@ -139,19 +169,34 @@ export class RoleCommand extends Command {
         );
 
         if (role.guild.id === role.id) {
-          return '@everyone is not a valid role';
+          await interaction.reply({
+            content: '@everyone is not a valid role',
+            ephemeral: true,
+          });
+          return;
         }
 
-        if (role.rawPosition >= authorMember.roles.highest.rawPosition) {
-          return 'You cannot remove this role from anyone.';
+        if (!canAssignRole(authorMember, role)) {
+          await interaction.reply({
+            content: 'You do not have permission to remove this role.',
+            ephemeral: true,
+          });
+          return;
         }
 
         try {
           await member.roles.remove(role.id);
-          return `Removed <@&${role.id}> from ${member}.`;
+          await interaction.reply({
+            content: `Removed <@&${role.id}> from ${member}.`,
+            ephemeral: true,
+          });
         } catch {
-          return `Could not remove <@&${role.id}> from ${member}.`;
+          await interaction.reply({
+            content: `Could not remove <@&${role.id}> from ${member}.`,
+            ephemeral: true,
+          });
         }
+        return;
       }
     }
   };

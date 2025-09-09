@@ -4,6 +4,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
+import { canUntimeout } from '../utils/moderation';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 
 export class UntimeoutCommand extends Command {
@@ -22,27 +23,49 @@ export class UntimeoutCommand extends Command {
         .setDescription('Untimeout reason')
         .setRequired(true),
     );
-  public override servers = [ CONFIG.ids.servers.dmc ];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
+
+  public override servers = [CONFIG.ids.servers.dmc];
+
+  public override execute = async ({ interaction }: CommandContext): Promise<void> => {
+    const moderator = interaction.guild.members.resolve(interaction.user.id);
+
+    if (!moderator || !canUntimeout(moderator)) {
+      await interaction.reply({
+        content: 'You do not have permission to use this command.',
+        ephemeral: true,
+      });
+      return;
+    }
+
     const user = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
 
     const member = interaction.guild.members.resolve(user.id);
 
     if (!member) {
-      return 'Could not find this member. They probably left.';
+      await interaction.reply({
+        content: 'Could not find this member. They probably left.',
+        ephemeral: true,
+      });
+      return;
     }
 
     try {
       await member.timeout(null, reason);
     } catch {
-      return new EmbedBuilder()
-        .setDescription('Could not untimeout this member.')
-        .setColor(Colors.RED);
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setDescription('Could not untimeout this member.')
+            .setColor(Colors.RED)
+        ],
+        ephemeral: true,
+      });
+      return;
     }
 
     await member
-    	.send({
+      .send({
         embeds: [
           new EmbedBuilder()
             .addFields(
@@ -56,7 +79,7 @@ export class UntimeoutCommand extends Command {
               name: `You've been untimed out in ${interaction.guild.name}`,
               iconURL: interaction.guild.iconURL(),
             })
-    				.setColor(Colors.INVISIBLE),
+            .setColor(Colors.INVISIBLE),
         ],
       })
       .catch(() => null);
@@ -82,18 +105,24 @@ export class UntimeoutCommand extends Command {
         .setColor(Colors.YELLOW),
     );
 
-    return new EmbedBuilder()
-      .setAuthor({
-        name: `${member.user.username} has been untimed out`,
-        iconURL: member.user.avatarURL(),
-      })
-      .addFields(
-        {
-          name: 'Reason',
-          value: reason,
-          inline: false,
-        },
-      );
+    await interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setAuthor({
+            name: `${member.user.username} has been untimed out`,
+            iconURL: member.user.avatarURL(),
+          })
+          .addFields(
+            {
+              name: 'Reason',
+              value: reason,
+              inline: false,
+            },
+          )
+          .setColor(Colors.INVISIBLE)
+      ],
+      ephemeral: true,
+    });
   };
 }
 

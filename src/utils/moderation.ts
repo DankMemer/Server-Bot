@@ -1,8 +1,5 @@
-import { GuildMember, PermissionsBitField } from 'discord.js';
+import { Guild, GuildMember, PermissionsBitField, Role } from 'discord.js';
 import { CONFIG } from '../config';
-
-const LEVEL_ADMIN = 0;
-const LEVEL_NONE = -1;
 
 function canModerateUser(moderator: GuildMember, offender: GuildMember): boolean {
   if (isAdminOrManager(offender)) {
@@ -49,52 +46,62 @@ export function canFreezeNickname(moderator: GuildMember, offender: GuildMember)
     return false;
   }
 
-  return moderator.roles.highest.position > offender.roles.highest.position;
+  return isMemberAboveRole(moderator, offender.roles.highest);
+}
+
+export function canDmUser(member: GuildMember): boolean {
+  return isStaff(member);
+}
+
+export function canModlog(member: GuildMember): boolean {
+  return hasBanPermission(member);
+}
+
+export function canReason(member: GuildMember): boolean {
+  return hasBanPermission(member);
+}
+
+export function canUnban(member: GuildMember): boolean {
+  return hasBanPermission(member);
+}
+
+export function canUntimeout(member: GuildMember): boolean {
+  return hasTimeoutPermission(member);
+}
+
+export function canAssignRole(member: GuildMember, targetRole: Role): boolean {
+  if (!isStaff(member)) {
+    return false;
+  }
+
+  if (isAdminOrManager(member)) {
+    return isMemberAboveRole(member, targetRole);
+  }
+
+  if (isStaff(member)) {
+    const staffRole = getStaffRole(member.guild);
+
+    if (!staffRole) {
+      return false; // Staff role not found
+    }
+
+    return isRoleAboveRole(staffRole, targetRole);
+  }
+
+  return false;
 }
 
 export function canManageAutomod(member: GuildMember): boolean {
   return isAdminOrManager(member);
 }
 
-function getTimeoutHierarchyLevel(member: GuildMember): number {
-  if (isAdminOrManager(member)) {
-    return LEVEL_ADMIN;
-  }
-
-  const hierarchyLevels = {
-    [CONFIG.ids.roles.dmc.communityManager]: 1, // Community Manager (DMC only)
-    [CONFIG.ids.roles.dmc.moderator]: 2,        // Moderator
-    [CONFIG.ids.roles.dmo.moderator]: 2,        // Moderator (same level as DMC)
-    [CONFIG.ids.roles.dmc.trialModerator]: 3,   // Trial Moderator (lowest)
-    [CONFIG.ids.roles.dmo.trialModerator]: 3,   // Trial Moderator (lowest)
-  };
-
-  for (const roleId of member.roles.cache.keys()) {
-    if (roleId in hierarchyLevels) {
-      return hierarchyLevels[roleId];
-    }
-  }
-
-  return LEVEL_NONE;
-};
 
 export function canTimeoutUser(moderator: GuildMember, offender: GuildMember): boolean {
   if (!hasTimeoutPermission(moderator)) {
     return false;
   }
 
-  const moderatorLevel = getTimeoutHierarchyLevel(moderator);
-  const offenderLevel = getTimeoutHierarchyLevel(offender);
-
-  if (offenderLevel === LEVEL_NONE) {
-    return true;
-  }
-
-  if (moderatorLevel === LEVEL_NONE) {
-    return false;
-  }
-
-  return moderatorLevel <= offenderLevel;
+  return isMemberAboveRole(moderator, offender.roles.highest);
 }
 
 function hasTimeoutPermission(member: GuildMember): boolean {
@@ -130,15 +137,36 @@ function isAdminOrManager(member: GuildMember): boolean {
   );
 }
 
-function isStaffOrTeam(member: GuildMember): boolean {
-  const staffTeamRoles = [
+export function isStaff(member: GuildMember): boolean {
+  const staffRoles = [
     CONFIG.ids.roles.dmc.staff,
-    CONFIG.ids.roles.dmc.team,
     CONFIG.ids.roles.dmo.staff,
   ];
 
   return member.roles.cache.some(role =>
-    staffTeamRoles.includes(role.id)
+    staffRoles.includes(role.id)
   );
+}
+
+function isTeam(member: GuildMember): boolean {
+  return member.roles.cache.has(CONFIG.ids.roles.dmc.team);
+}
+
+function isStaffOrTeam(member: GuildMember): boolean {
+  return isStaff(member) || isTeam(member);
+}
+
+export function isMemberAboveRole(member: GuildMember, role: Role): boolean {
+  return member.roles.highest.position > role.position;
+}
+
+export function isRoleAboveRole(higherRole: Role, lowerRole: Role): boolean {
+  return higherRole.position > lowerRole.position;
+}
+
+function getStaffRole(guild: Guild): Role | null {
+  return guild.id === CONFIG.ids.servers.dmc
+    ? guild.roles.cache.get(CONFIG.ids.roles.dmc.staff) || null
+    : guild.roles.cache.get(CONFIG.ids.roles.dmo.staff) || null;
 }
 
