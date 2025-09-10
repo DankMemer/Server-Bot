@@ -23,52 +23,38 @@ export class KickCommand extends Command {
         .setDescription('Kick reason')
         .setRequired(true),
     );
-  public override servers = [ CONFIG.ids.servers.dmc ];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string | void> => {
+  public override servers = [CONFIG.ids.servers.dmc];
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | void> => {
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
 
     const offenderMember = interaction.guild.members.resolve(offender.id);
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
-    await interaction.deferReply({ ephemeral: true });
-
     if (!offenderMember) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('Could not find this member. They probably left.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     if (!moderatorMember) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('Could not find your member record.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     if (!canKickUser(moderatorMember, offenderMember)) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('You cannot kick this user.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     try {
       await offenderMember.kick(`Kicked by ${interaction.user.username} | ${reason}`);
     } catch {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('Could not kick this member.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     await offender
@@ -112,7 +98,8 @@ export class KickCommand extends Command {
         .setColor(Colors.ORANGE),
     );
 
-    await interaction.editReply({
+    await interaction.reply({
+      ephemeral: true,
       embeds: [
         new EmbedBuilder()
           .setAuthor({

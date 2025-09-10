@@ -40,55 +40,34 @@ export class SupportCommand extends Command {
     const offenderMember = interaction.guild.members.resolve(offender.id);
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
-    await interaction.deferReply({ ephemeral: true });
-
     if (!offenderMember) {
-      const embed = new EmbedBuilder()
-        .setDescription('Could not find this member. They probably left.')
-        .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
+      return 'Could not find this member. They probably left.';
     }
 
     if (!moderatorMember) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('Could not find your member record.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     if (!canTimeoutUser(moderatorMember, offenderMember)) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('You cannot timeout this user.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     const milliseconds = parseDuration(duration);
 
     if (!milliseconds) {
-      const embed = new EmbedBuilder()
-        .setDescription('You need to input a valid duration.')
-        .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
+      return 'You need to input a valid duration.';
     }
 
     try {
       await offenderMember.timeout(milliseconds, reason);
     } catch {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('Could not timeout this member.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     const ends = formatDiscordTimestamp(HolyTime.in(milliseconds), DiscordTimestampFormat.RELATIVE_TIME);
@@ -141,7 +120,8 @@ export class SupportCommand extends Command {
         .setColor(Colors.BLUE),
     );
 
-    await interaction.editReply({
+    await interaction.reply({
+      ephemeral: true,
       embeds: [
         new EmbedBuilder()
           .setAuthor({

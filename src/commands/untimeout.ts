@@ -26,15 +26,13 @@ export class UntimeoutCommand extends Command {
 
   public override servers = [CONFIG.ids.servers.dmc];
 
-  public override execute = async ({ interaction }: CommandContext): Promise<void> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder> => {
     const moderator = interaction.guild.members.resolve(interaction.user.id);
 
     if (!moderator || !canUntimeout(moderator)) {
-      await interaction.reply({
-        content: 'You do not have permission to use this command.',
-        ephemeral: true,
-      });
-      return;
+      return new EmbedBuilder()
+        .setDescription('You do not have permission to use this command.')
+        .setColor(Colors.RED);
     }
 
     const user = interaction.options.getUser('user', true);
@@ -43,25 +41,17 @@ export class UntimeoutCommand extends Command {
     const member = interaction.guild.members.resolve(user.id);
 
     if (!member) {
-      await interaction.reply({
-        content: 'Could not find this member. They probably left.',
-        ephemeral: true,
-      });
-      return;
+      return new EmbedBuilder()
+        .setDescription('Could not find this member. They probably left.')
+        .setColor(Colors.RED);
     }
 
     try {
       await member.timeout(null, reason);
     } catch {
-      await interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setDescription('Could not untimeout this member.')
-            .setColor(Colors.RED)
-        ],
-        ephemeral: true,
-      });
-      return;
+      return new EmbedBuilder()
+        .setDescription('Could not untimeout this member.')
+        .setColor(Colors.RED);
     }
 
     await member
@@ -105,24 +95,18 @@ export class UntimeoutCommand extends Command {
         .setColor(Colors.YELLOW),
     );
 
-    await interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setAuthor({
-            name: `${member.user.username} has been untimed out`,
-            iconURL: member.user.avatarURL(),
-          })
-          .addFields(
-            {
-              name: 'Reason',
-              value: reason,
-              inline: false,
-            },
-          )
-          .setColor(Colors.INVISIBLE)
-      ],
-      ephemeral: true,
-    });
+    return new EmbedBuilder()
+      .setAuthor({
+        name: `${member.user.username} has been untimed out`,
+        iconURL: member.user.avatarURL(),
+      })
+      .addFields(
+        {
+          name: 'Reason',
+          value: reason,
+          inline: false,
+        },
+      );
   };
 }
 

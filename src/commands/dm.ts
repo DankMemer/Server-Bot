@@ -30,15 +30,11 @@ export class DmCommand extends Command {
 
   public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
 
-  public override execute = async ({ interaction }: CommandContext): Promise<void> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<string> => {
     const staff = interaction.guild.members.resolve(interaction.user.id);
 
     if (!staff || !canDmUser(staff)) {
-      await interaction.reply({
-        content: 'You do not have permission to use this command.',
-        ephemeral: true,
-      });
-      return;
+      return 'You do not have permission to use this command.';
     }
 
     const target = interaction.options.getUser('user', true);
@@ -64,17 +60,10 @@ export class DmCommand extends Command {
         ],
       });
     } catch {
-      await interaction.reply({
-        content: 'Failed to send a DM.',
-        ephemeral: true,
-      });
-      return;
+      return 'Failed to send a DM.';
     }
 
-    await interaction.reply({
-      content: 'DM sent.',
-      ephemeral: true,
-    });
+    return 'DM sent.';
   };
 }
 

@@ -35,8 +35,8 @@ export class BanCommand extends Command {
           )
           .setRequired(false),
     );
-  public override servers = [ CONFIG.ids.servers.dmc ];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string | void> => {
+  public override servers = [CONFIG.ids.servers.dmc];
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | void> => {
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
     const deleteMessageSeconds = interaction.options.getString('delete_messages', false);
@@ -44,33 +44,22 @@ export class BanCommand extends Command {
     const offenderMember = interaction.guild.members.resolve(offender.id);
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
-    await interaction.deferReply({ ephemeral: true });
-
     if (!offenderMember) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('Could not find this member. They probably left.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     if (!moderatorMember) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('Could not find your member record.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     if (!canBanUser(moderatorMember, offenderMember)) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('You cannot ban this user.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     try {
@@ -79,12 +68,9 @@ export class BanCommand extends Command {
         ...(deleteMessageSeconds ? { deleteMessageSeconds: Number.parseInt(deleteMessageSeconds) / HolyTime.Units.SECOND } : {}),
       });
     } catch {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('Could not ban this member.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     await offender
@@ -128,7 +114,8 @@ export class BanCommand extends Command {
         .setColor(Colors.RED),
     );
 
-    await interaction.editReply({
+    await interaction.reply({
+      ephemeral: true,
       embeds: [
         new EmbedBuilder()
           .setAuthor({

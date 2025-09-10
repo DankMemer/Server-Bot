@@ -22,7 +22,7 @@ export async function commandsHandler(interaction: Interaction, userEntry: User)
     });
 
     if (typeof output === 'string') {
-      interaction.reply({
+      await interaction.reply({
         embeds: [
           new EmbedBuilder({
             color: Colors.INVISIBLE,
@@ -35,7 +35,7 @@ export async function commandsHandler(interaction: Interaction, userEntry: User)
         output.setColor(Colors.INVISIBLE);
       }
 
-      interaction.reply({
+      await interaction.reply({
         embeds: [
           output,
         ],

@@ -25,15 +25,11 @@ export class ReasonCommand extends Command {
 
   public override servers = [CONFIG.ids.servers.dmc];
 
-  public override execute = async ({ interaction }: CommandContext): Promise<void> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<string | void> => {
     const moderator = interaction.guild.members.resolve(interaction.user.id);
 
     if (!moderator || !canReason(moderator)) {
-      await interaction.reply({
-        content: 'You do not have permission to use this command.',
-        ephemeral: true,
-      });
-      return;
+      return 'You do not have permission to use this command.';
     }
 
     const id = interaction.options.getNumber('id', true);
@@ -46,11 +42,7 @@ export class ReasonCommand extends Command {
     });
 
     if (!oldLog) {
-      await interaction.reply({
-        content: 'Could not find this moderation log.',
-        ephemeral: true,
-      });
-      return;
+      return 'Could not find this moderation log.';
     }
 
     await prismaClient.moderationLog.update({

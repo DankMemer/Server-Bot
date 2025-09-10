@@ -26,15 +26,13 @@ export class UnbanCommand extends Command {
 
   public override servers = [CONFIG.ids.servers.dmc];
 
-  public override execute = async ({ interaction }: CommandContext): Promise<void> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder> => {
     const moderator = interaction.guild.members.resolve(interaction.user.id);
 
     if (!moderator || !canUnban(moderator)) {
-      await interaction.reply({
-        content: 'You do not have permission to use this command.',
-        ephemeral: true,
-      });
-      return;
+      return new EmbedBuilder()
+        .setDescription('You do not have permission to use this command.')
+        .setColor(Colors.RED);
     }
 
     const user = interaction.options.getUser('user', true);
@@ -43,15 +41,9 @@ export class UnbanCommand extends Command {
     try {
       await interaction.guild.members.unban(user.id, `Unbanned by ${interaction.user.username} | ${reason}`);
     } catch {
-      await interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setDescription('Could not unban this member.')
-            .setColor(Colors.RED)
-        ],
-        ephemeral: true,
-      });
-      return;
+      return new EmbedBuilder()
+        .setDescription('Could not unban this member.')
+        .setColor(Colors.RED);
     }
 
     await user
@@ -95,23 +87,18 @@ export class UnbanCommand extends Command {
         .setColor(Colors.GREEN),
     );
 
-    await interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setAuthor({
-            name: `${user.username} has been unbanned`,
-            iconURL: user.avatarURL(),
-          })
-          .addFields(
-            {
-              name: 'Reason',
-              value: reason,
-              inline: false,
-            },
-          )
-          .setColor(Colors.INVISIBLE)
-      ],
-      ephemeral: true,
-    });
+    return new EmbedBuilder()
+      .setAuthor({
+        name: `${user.username} has been unbanned`,
+        iconURL: user.avatarURL(),
+      })
+      .addFields(
+        {
+          name: 'Reason',
+          value: reason,
+          inline: false,
+        },
+      )
+      .setColor(Colors.GREEN);
   };
 }

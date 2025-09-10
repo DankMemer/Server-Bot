@@ -3,7 +3,6 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashComman
 import { CONFIG } from '../../config';
 import { Colors } from '../../constants/colors';
 import { Command, CommandContext } from '../../structures/command';
-import { ephemeralResponse } from '../../utils/format';
 import { canAssignRole, isStaff } from '../../utils/moderation';
 import { parseUsers } from '../../utils/user-parsing';
 
@@ -76,7 +75,7 @@ export class RoleCommand extends Command {
 
   public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
 
-  public override execute = async ({ interaction }: CommandContext): Promise<void> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<void | string> => {
     const action = interaction.options.getSubcommand();
     const role = interaction.guild.roles.cache.get(
       interaction.options.getRole('role', true).id,
@@ -89,8 +88,7 @@ export class RoleCommand extends Command {
         );
 
         if (!authorMember || !isStaff(authorMember)) {
-          await interaction.reply(ephemeralResponse('You do not have permission to use this command.'));
-          return;
+          return 'You do not have permission to use this command.';
         }
 
         await interaction.deferReply();
@@ -146,24 +144,19 @@ export class RoleCommand extends Command {
         );
 
         if (role.guild.id === role.id) {
-          await interaction.reply(ephemeralResponse('@everyone is not a valid role'));
-          return;
+          return '@everyone is not a valid role';
         }
 
         if (!canAssignRole(authorMember, role)) {
-          await interaction.reply(ephemeralResponse('You do not have permission to assign this role.'));
-          return;
+          return 'You do not have permission to assign this role.';
         }
 
         try {
           await member.roles.add(role.id);
-          await interaction.reply({
-            content: `Added <@&${role.id}> to ${member}.`,
-          });
+          return `Added <@&${role.id}> to ${member}.`;
         } catch {
-          await interaction.reply(ephemeralResponse(`Could not add <@&${role.id}> to ${member}.`));
+          return `Could not add <@&${role.id}> to ${member}.`;
         }
-        return;
       }
 
       case 'remove': {
@@ -175,30 +168,19 @@ export class RoleCommand extends Command {
         );
 
         if (role.guild.id === role.id) {
-          await interaction.reply({
-            content: '@everyone is not a valid role',
-          });
-          return;
+          return '@everyone is not a valid role';
         }
 
         if (!canAssignRole(authorMember, role)) {
-          await interaction.reply({
-            content: 'You do not have permission to remove this role.',
-          });
-          return;
+          return 'You do not have permission to remove this role.';
         }
 
         try {
           await member.roles.remove(role.id);
-          await interaction.reply({
-            content: `Removed <@&${role.id}> from ${member}.`,
-          });
+          return `Removed <@&${role.id}> from ${member}.`;
         } catch {
-          await interaction.reply({
-            content: `Could not remove <@&${role.id}> from ${member}.`,
-          });
+          return `Could not remove <@&${role.id}> from ${member}.`;
         }
-        return;
       }
 
       case 'addmulti': {
@@ -207,24 +189,15 @@ export class RoleCommand extends Command {
         );
 
         if (!authorMember || !isStaff(authorMember)) {
-          await interaction.reply({
-            content: 'You do not have permission to use this command.',
-          });
-          return;
+          return 'You do not have permission to use this command.';
         }
 
         if (role.guild.id === role.id) {
-          await interaction.reply({
-            content: '@everyone is not a valid role',
-          });
-          return;
+          return '@everyone is not a valid role';
         }
 
         if (!canAssignRole(authorMember, role)) {
-          await interaction.reply({
-            content: 'You do not have permission to assign this role.',
-          });
-          return;
+          return 'You do not have permission to assign this role.';
         }
 
         const usersInput = interaction.options.getString('users', true);
@@ -242,7 +215,7 @@ export class RoleCommand extends Command {
 
           const userIds = members.map(m => m.id).join(',');
 
-          await interaction.editReply({
+          return void await interaction.editReply({
             embeds: [
               new EmbedBuilder()
                 .setTitle('Confirm Multi-Role Assignment')
@@ -260,7 +233,7 @@ export class RoleCommand extends Command {
             ],
           });
         } catch (error) {
-          await interaction.editReply({
+          return void await interaction.editReply({
             content: error?.message ?? 'An unexpected error occurred while parsing users.',
           });
         }
