@@ -3,7 +3,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashComman
 import { CONFIG } from '../../config';
 import { Colors } from '../../constants/colors';
 import { Command, CommandContext } from '../../structures/command';
-import { canAssignRole, isStaff } from '../../utils/moderation';
+import { canAssignRole, canUseRoleCommands } from '../../utils/moderation';
 import { parseUsers } from '../../utils/user-parsing';
 
 export class RoleCommand extends Command {
@@ -87,7 +87,7 @@ export class RoleCommand extends Command {
           interaction.user.id,
         );
 
-        if (!authorMember || !isStaff(authorMember)) {
+        if (!authorMember || !canUseRoleCommands(authorMember)) {
           return 'You do not have permission to use this command.';
         }
 
@@ -143,6 +143,10 @@ export class RoleCommand extends Command {
           interaction.user.id,
         );
 
+        if (!authorMember || !canUseRoleCommands(authorMember)) {
+          return 'You do not have permission to use this command.';
+        }
+
         if (role.guild.id === role.id) {
           return '@everyone is not a valid role';
         }
@@ -167,6 +171,10 @@ export class RoleCommand extends Command {
           interaction.user.id,
         );
 
+        if (!authorMember || !canUseRoleCommands(authorMember)) {
+          return 'You do not have permission to use this command.';
+        }
+
         if (role.guild.id === role.id) {
           return '@everyone is not a valid role';
         }
@@ -188,7 +196,7 @@ export class RoleCommand extends Command {
           interaction.user.id,
         );
 
-        if (!authorMember || !isStaff(authorMember)) {
+        if (!authorMember || !canUseRoleCommands(authorMember)) {
           return 'You do not have permission to use this command.';
         }
 

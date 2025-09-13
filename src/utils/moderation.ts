@@ -148,6 +148,10 @@ export function isStaff(member: GuildMember): boolean {
   );
 }
 
+export function canUseRoleCommands(member: GuildMember): boolean {
+  return isStaff(member) || isAdminOrManager(member);
+}
+
 function isTeam(member: GuildMember): boolean {
   return member.roles.cache.has(CONFIG.ids.roles.dmc.team);
 }
