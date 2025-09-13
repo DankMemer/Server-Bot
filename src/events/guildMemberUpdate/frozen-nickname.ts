@@ -3,6 +3,7 @@ import { EmbedBuilder, GuildMember } from 'discord.js';
 import { CONFIG } from '../../config';
 import { Colors } from '../../constants/colors';
 import { discordClient } from '../../lib/discord-client';
+import { logger } from '../../lib/logger';
 import { prismaClient } from '../../lib/prisma-client';
 import { registerModerationLog, sendModerationLog } from '../../utils/moderation-log';
 
@@ -25,7 +26,7 @@ export async function enforceFrozenNickname(member: GuildMember): Promise<void> 
     await notifyMemberNicknameReverted(member, frozenNickname);
     await logNicknameReverted(member, frozenNickname);
   } catch (error) {
-    console.error(`Failed to revert frozen nickname for user ${member.id}:`, error);
+    logger.error(`Failed to revert frozen nickname for user ${member.id}: ${error}`);
   }
 }
 

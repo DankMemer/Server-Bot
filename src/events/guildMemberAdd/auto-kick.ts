@@ -4,6 +4,7 @@ import HolyTime from 'holy-time';
 import { CONFIG } from '../../config';
 import { Colors } from '../../constants/colors';
 import { discordClient } from '../../lib/discord-client';
+import { logger } from '../../lib/logger';
 import { memerClient } from '../../lib/memer-client';
 import { registerModerationLog, sendModerationLog } from '../../utils/moderation-log';
 
@@ -22,7 +23,7 @@ export async function enforceNotNewAccounts(member: GuildMember): Promise<void> 
     await member.kick(reason);
     await logAutoKick(member, reason);
   } catch (error) {
-    console.error(`Failed to kick new account ${member.id}:`, error);
+    logger.error(`Failed to kick new account ${member.id}: ${error}`);
   }
 }
 
@@ -43,7 +44,7 @@ export async function enforceBan(member: GuildMember): Promise<void> {
     await member.kick(reason);
     await logAutoKick(member, reason);
   } catch (error) {
-    console.error(`Failed to kick banned user ${member.id}:`, error);
+    logger.error(`Failed to kick banned user ${member.id}: ${error}`);
   }
 }
 

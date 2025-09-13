@@ -1,5 +1,6 @@
 import { ChannelType, Message } from 'discord.js';
 import { CONFIG } from '../../config';
+import { logger } from '../../lib/logger';
 import { getAllowedUrls } from '../../utils/allowed-urls';
 import { extractUrlsFromMessage, isUrlAllowed } from '../../utils/url';
 
@@ -47,7 +48,7 @@ export async function linkHandler(message: Message): Promise<void> {
       await message.delete();
     }
   } catch (error) {
-    console.error('Error checking allowed URLs:', error);
+    logger.error(`Error checking allowed URLs: ${error}`);
 
     // On error, fall back to deleting the message (fail-safe approach)
     await message.delete();
