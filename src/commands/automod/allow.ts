@@ -21,8 +21,7 @@ export async function handleAllowList(interaction: any): Promise<void> {
     const embed = new EmbedBuilder()
       .setTitle('Allowed URLs')
       .setDescription(description)
-      .setColor(Colors.BLUE)
-      .setFooter({ text: 'Note: Hardcoded URLs are not shown in this list' });
+      .setColor(Colors.BLUE);
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {

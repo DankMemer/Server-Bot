@@ -16,18 +16,6 @@ const WHITELISTED_CHANNELS = new Set<string>([
   CONFIG.ids.channels.dmc.premiumSupport,
 ]);
 
-const HARDCODED_ALLOWED_LINKS = [
-  'dankmemer.lol',
-  'www.dankmemer.lol',
-  'www.youtube.com',
-  'youtube.com',
-  'discord.com/channels/682809584985178135/',
-  'discord.com/channels/470337009886429194/',
-  'media.tenor.com/',
-  'tenor.com/',
-  'dankmemer.wiki/',
-];
-
 export async function linkHandler(message: Message): Promise<void> {
   if (message.guild?.id !== CONFIG.ids.servers.dmc) {
     return;
@@ -51,10 +39,9 @@ export async function linkHandler(message: Message): Promise<void> {
   }
 
   try {
-    const databaseUrls = await getAllowedUrls();
-    const allAllowedUrls = [...HARDCODED_ALLOWED_LINKS, ...databaseUrls];
+    const allowedUrls = await getAllowedUrls();
 
-    const hasUnallowedUrls = messageUrls.some(url => !isUrlAllowed(url, allAllowedUrls));
+    const hasUnallowedUrls = messageUrls.some(url => !isUrlAllowed(url, allowedUrls));
 
     if (hasUnallowedUrls) {
       await message.delete();
