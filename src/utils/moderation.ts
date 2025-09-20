@@ -85,6 +85,14 @@ export function canUntimeout(member: GuildMember): boolean {
   return hasTimeoutPermission(member);
 }
 
+export function canUseRoleCommands(member: GuildMember): boolean {
+  return isStaff(member) || isAdminOrManager(member);
+}
+
+export function canUseMassRoleCommands(member: GuildMember): boolean {
+  return isCommunityManager(member) || isAdminOrManager(member);
+}
+
 export function canAssignRole(member: GuildMember, targetRole: Role): boolean {
   if (isAdminOrManager(member)) {
     return isMemberAboveRole(member, targetRole);
@@ -103,10 +111,27 @@ export function canAssignRole(member: GuildMember, targetRole: Role): boolean {
   return false;
 }
 
+export function canMassAssignRole(member: GuildMember, targetRole: Role): boolean {
+  if (isAdminOrManager(member)) {
+    return isMemberAboveRole(member, targetRole);
+  }
+
+  if (isCommunityManager(member)) {
+    const staffRole = getStaffRole(member.guild);
+
+    if (!staffRole) {
+      return false; // Staff role not found
+    }
+
+    return isRoleAboveRole(staffRole, targetRole);
+  }
+
+  return false;
+}
+
 export function canManageAutomod(member: GuildMember): boolean {
   return isAdminOrManager(member);
 }
-
 
 export function canTimeoutUser(moderator: GuildMember, offender: GuildMember): boolean {
   if (!hasTimeoutPermission(moderator)) {
@@ -160,12 +185,12 @@ export function isStaff(member: GuildMember): boolean {
   );
 }
 
-export function canUseRoleCommands(member: GuildMember): boolean {
-  return isStaff(member) || isAdminOrManager(member);
-}
-
 function isTeam(member: GuildMember): boolean {
   return member.roles.cache.has(CONFIG.ids.roles.dmc.team);
+}
+
+function isCommunityManager(member: GuildMember): boolean {
+  return member.roles.cache.has(CONFIG.ids.roles.dmc.communityManager);
 }
 
 function isStaffOrTeam(member: GuildMember): boolean {
@@ -185,4 +210,3 @@ function getStaffRole(guild: Guild): Role | null {
     ? guild.roles.cache.get(CONFIG.ids.roles.dmc.staff) || null
     : guild.roles.cache.get(CONFIG.ids.roles.dmo.staff) || null;
 }
-

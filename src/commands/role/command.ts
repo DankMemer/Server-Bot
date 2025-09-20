@@ -3,7 +3,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashComman
 import { CONFIG } from '../../config';
 import { Colors } from '../../constants/colors';
 import { Command, CommandContext } from '../../structures/command';
-import { canAssignRole, canUseRoleCommands } from '../../utils/moderation';
+import { canAssignRole, canMassAssignRole, canUseMassRoleCommands, canUseRoleCommands } from '../../utils/moderation';
 import { parseUsers } from '../../utils/user-parsing';
 
 export class RoleCommand extends Command {
@@ -196,7 +196,7 @@ export class RoleCommand extends Command {
           interaction.user.id,
         );
 
-        if (!authorMember || !canUseRoleCommands(authorMember)) {
+        if (!authorMember || !canUseMassRoleCommands(authorMember)) {
           return 'You do not have permission to use this command.';
         }
 
@@ -204,7 +204,7 @@ export class RoleCommand extends Command {
           return '@everyone is not a valid role';
         }
 
-        if (!canAssignRole(authorMember, role)) {
+        if (!canMassAssignRole(authorMember, role)) {
           return 'You do not have permission to assign this role.';
         }
 
