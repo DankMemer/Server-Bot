@@ -28,12 +28,6 @@ export class AutomodCommand extends Command {
                 .setDescription('URL to allow (without protocol, e.g., example.com/path)')
                 .setRequired(true)
             )
-            .addBooleanOption(option =>
-              option
-                .setName('global')
-                .setDescription('Make this URL allowed globally across all servers')
-                .setRequired(false)
-            )
         )
         .addSubcommand(subcommand =>
           subcommand
@@ -44,12 +38,6 @@ export class AutomodCommand extends Command {
                 .setName('url')
                 .setDescription('URL to remove (without protocol, e.g., example.com/path)')
                 .setRequired(true)
-            )
-            .addBooleanOption(option =>
-              option
-                .setName('global')
-                .setDescription('Remove from global allowed list instead of guild-specific')
-                .setRequired(false)
             )
         )
     );
