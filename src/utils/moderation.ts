@@ -2,6 +2,10 @@ import { Guild, GuildMember, PermissionsBitField, Role } from 'discord.js';
 import { CONFIG } from '../config';
 
 function canModerateUser(moderator: GuildMember, offender: GuildMember): boolean {
+  if (!isMemberAboveRole(moderator, offender.roles.highest)) {
+    return false;
+  }
+
   if (isAdminOrManager(offender)) {
     return false;
   }
