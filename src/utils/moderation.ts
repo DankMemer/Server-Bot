@@ -86,10 +86,6 @@ export function canUntimeout(member: GuildMember): boolean {
 }
 
 export function canAssignRole(member: GuildMember, targetRole: Role): boolean {
-  if (!isStaff(member)) {
-    return false;
-  }
-
   if (isAdminOrManager(member)) {
     return isMemberAboveRole(member, targetRole);
   }
