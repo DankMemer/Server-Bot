@@ -54,7 +54,19 @@ export function canFreezeNickname(moderator: GuildMember, offender: GuildMember)
 }
 
 export function canDmUser(member: GuildMember): boolean {
-  return isStaff(member);
+  if (isStaff(member)) {
+    return true;
+  }
+
+  if (hasBanPermission(member)) {
+    return true;
+  }
+
+  if (isAdminOrManager(member)) {
+    return true;
+  }
+
+  return false;
 }
 
 export function canModlog(member: GuildMember): boolean {
