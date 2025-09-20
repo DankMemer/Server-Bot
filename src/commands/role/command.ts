@@ -5,6 +5,7 @@ import { Colors } from '../../constants/colors';
 import { Command, CommandContext } from '../../structures/command';
 import { canAssignRole, canMassAssignRole, canUseMassRoleCommands, canUseRoleCommands } from '../../utils/moderation';
 import { parseUsers } from '../../utils/user-parsing';
+import { createRoleSession } from './session';
 
 export class RoleCommand extends Command {
   public override data = new SlashCommandBuilder()
@@ -215,13 +216,21 @@ export class RoleCommand extends Command {
         try {
           const members = await parseUsers(usersInput, interaction.guild);
 
+          const sessionId = interaction.id;
+
+          await createRoleSession(sessionId, {
+            moderatorId: interaction.user.id,
+            roleId: role.id,
+            usersInput,
+            guildId: interaction.guild.id,
+            createdAt: Date.now()
+          });
+
           const userList = members
             .map(member => `• ${member.user.username} (${member.user.id})`)
             .join('\n');
 
           const description = `**Role to assign:** <@&${role.id}>\n\n**Users (${members.length}):**\n${userList}\n\n**Are you sure?**`;
-
-          const userIds = members.map(m => m.id).join(',');
 
           return void await interaction.editReply({
             embeds: [
@@ -235,11 +244,11 @@ export class RoleCommand extends Command {
                 .addComponents(
                   new ButtonBuilder()
                     .setLabel(`Assign Role to ${members.length} Users`)
-                    .setCustomId(`role-addmulti-confirm:${interaction.user.id}:${role.id}:${userIds}`)
+                    .setCustomId(`role-addmulti-confirm:${sessionId}`)
                     .setStyle(ButtonStyle.Primary),
                   new ButtonBuilder()
                     .setLabel('Cancel')
-                    .setCustomId(`role-addmulti-cancel:${interaction.user.id}`)
+                    .setCustomId(`role-addmulti-cancel:${sessionId}`)
                     .setStyle(ButtonStyle.Secondary),
                 ),
             ],

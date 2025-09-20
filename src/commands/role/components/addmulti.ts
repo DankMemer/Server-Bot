@@ -4,21 +4,24 @@ import { Component, ComponentContext } from '../../../structures/component';
 import { ephemeralResponse } from '../../../utils/format';
 import { canAssignRole } from '../../../utils/moderation';
 import { parseUsers } from '../../../utils/user-parsing';
+import { consumeRoleSession } from '../session';
 
 export class RoleAddMultiConfirmComponent extends Component {
   public override id = 'role-addmulti-confirm';
 
   public override async execute({ interaction }: ComponentContext): Promise<void> {
-    const customIdParts = interaction.customId.split(':');
+    const sessionId = interaction.customId.split(':')[1];
 
-    if (interaction.user.id !== customIdParts[1]) {
+    const sessionData = await consumeRoleSession(sessionId);
+    if (!sessionData) {
+      return void interaction.reply(ephemeralResponse('Session expired. Please try the command again.'));
+    }
+
+    if (interaction.user.id !== sessionData.moderatorId) {
       return void interaction.reply(ephemeralResponse('You cannot do this.'));
     }
 
-    const roleId = customIdParts[2];
-    const usersInput = customIdParts[3];
-
-    const role = await interaction.guild.roles.fetch(roleId);
+    const role = await interaction.guild.roles.fetch(sessionData.roleId);
     if (!role) {
       return void interaction.reply(ephemeralResponse('Role not found.'));
     }
@@ -44,7 +47,7 @@ export class RoleAddMultiConfirmComponent extends Component {
     });
 
     try {
-      const members = await parseUsers(decodeURIComponent(usersInput), interaction.guild);
+      const members = await parseUsers(sessionData.usersInput, interaction.guild);
 
       const successes: string[] = [];
       const failures: string[] = [];
