@@ -237,6 +237,10 @@ export class RoleCommand extends Command {
                     .setLabel(`Assign Role to ${members.length} Users`)
                     .setCustomId(`role-addmulti-confirm:${interaction.user.id}:${role.id}:${userIds}`)
                     .setStyle(ButtonStyle.Primary),
+                  new ButtonBuilder()
+                    .setLabel('Cancel')
+                    .setCustomId(`role-addmulti-cancel:${interaction.user.id}`)
+                    .setStyle(ButtonStyle.Secondary),
                 ),
             ],
           });
