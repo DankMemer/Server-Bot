@@ -65,7 +65,7 @@ export class LockdownCommand extends Command {
 
   public override execute = async ({ interaction, userEntry }: CommandContext): Promise<void | string | EmbedBuilder> => {
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
-    
+
     if (!moderatorMember) {
       return 'Could not find your member record.';
     }
@@ -259,6 +259,10 @@ export class LockdownCommand extends Command {
                   .setLabel('Confirm Prune')
                   .setCustomId(`lockdown-prune-confirm:${userEntry.id}:${deletedChannels.map(c => c.id).join(',')}`)
                   .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
+                  .setLabel('Cancel')
+                  .setCustomId(`lockdown-prune-cancel:${userEntry.id}`)
+                  .setStyle(ButtonStyle.Secondary),
               ),
           ],
         });
