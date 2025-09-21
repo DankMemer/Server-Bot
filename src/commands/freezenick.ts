@@ -78,6 +78,21 @@ export class FreezeNickCommand extends Command {
       return;
     }
 
+    const existingFreeze = await prismaClient.frozenNickname.findUnique({
+      where: {
+        userID: BigInt(targetUser.id),
+      },
+    });
+
+    if (existingFreeze) {
+      const embed = new EmbedBuilder()
+        .setDescription('That user\'s nickname is already frozen.')
+        .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
     const originalNickname = targetMember.displayName;
 
     try {
@@ -91,35 +106,15 @@ export class FreezeNickCommand extends Command {
       return;
     }
 
-    const existingFreeze = await prismaClient.frozenNickname.findUnique({
-      where: {
+    await prismaClient.frozenNickname.create({
+      data: {
         userID: BigInt(targetUser.id),
+        moderatorID: BigInt(interaction.user.id),
+        guildID: BigInt(interaction.guildId),
+        frozenNickname,
+        reason,
       },
     });
-
-    if (existingFreeze) {
-      await prismaClient.frozenNickname.update({
-        where: {
-          userID: BigInt(targetUser.id),
-        },
-        data: {
-          moderatorID: BigInt(interaction.user.id),
-          guildID: BigInt(interaction.guildId),
-          frozenNickname,
-          reason,
-        },
-      });
-    } else {
-      await prismaClient.frozenNickname.create({
-        data: {
-          userID: BigInt(targetUser.id),
-          moderatorID: BigInt(interaction.user.id),
-          guildID: BigInt(interaction.guildId),
-          frozenNickname,
-          reason,
-        },
-      });
-    }
 
     const log = await registerModerationLog(
       ModerationLogType.FREEZE_NICK,
