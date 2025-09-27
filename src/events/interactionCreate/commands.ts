@@ -1,5 +1,5 @@
 import { User } from '@prisma/client';
-import { ChatInputCommandInteraction, EmbedBuilder, Interaction, InteractionType } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, Interaction, InteractionReplyOptions, InteractionType } from 'discord.js';
 import { Commands } from '../../commands';
 import { Colors } from '../../constants/colors';
 import { logger } from '../../lib/logger';
@@ -16,13 +16,15 @@ export async function commandsHandler(interaction: Interaction, userEntry: User)
   }
 
   try {
+    const commandInteraction = interaction as ChatInputCommandInteraction;
+
     const output = await command.execute({
-      interaction: interaction as ChatInputCommandInteraction,
+      interaction: commandInteraction,
       userEntry,
     });
 
     if (typeof output === 'string') {
-      await interaction.reply({
+      await replyInteraction(commandInteraction, {
         embeds: [
           new EmbedBuilder({
             color: Colors.INVISIBLE,
@@ -35,7 +37,7 @@ export async function commandsHandler(interaction: Interaction, userEntry: User)
         output.setColor(Colors.INVISIBLE);
       }
 
-      await interaction.reply({
+      await replyInteraction(commandInteraction, {
         embeds: [
           output,
         ],
@@ -43,5 +45,13 @@ export async function commandsHandler(interaction: Interaction, userEntry: User)
     }
   } catch (error: any) {
     logger.error(error.stack);
+  }
+}
+
+async function replyInteraction(interaction: ChatInputCommandInteraction, embedData: InteractionReplyOptions): Promise<void> {
+  if (interaction.deferred) {
+    await interaction.editReply(embedData);
+  } else {
+    await interaction.reply(embedData);
   }
 }

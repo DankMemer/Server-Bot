@@ -44,18 +44,15 @@ export class AutomodCommand extends Command {
 
   public override servers = [CONFIG.ids.servers.dmc];
 
-  public override execute = async ({ interaction }: CommandContext): Promise<void> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | void> => {
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
     await interaction.deferReply({ ephemeral: true });
 
     if (!moderatorMember || !canManageAutomod(moderatorMember)) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('You do not have permission to manage automod settings.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     const subcommandGroup = interaction.options.getSubcommandGroup();
@@ -64,14 +61,11 @@ export class AutomodCommand extends Command {
     if (subcommandGroup === 'allow') {
       switch (subcommand) {
         case 'list':
-          await handleAllowList(interaction);
-          break;
+          return await handleAllowList();
         case 'add':
-          await handleAllowAdd(interaction);
-          break;
+          return await handleAllowAdd(interaction);
         case 'remove':
-          await handleAllowRemove(interaction);
-          break;
+          return await handleAllowRemove(interaction);
       }
     }
   };
