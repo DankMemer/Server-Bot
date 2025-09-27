@@ -5,6 +5,7 @@ import { Colors } from '../../constants/colors';
 import { discordClient } from '../../lib/discord-client';
 import { logger } from '../../lib/logger';
 import { prismaClient } from '../../lib/prisma-client';
+import { isUserOnDmCooldown, setUserDmCooldown } from '../../utils/dm-cooldown';
 import { registerModerationLog, sendModerationLog } from '../../utils/moderation-log';
 
 export async function enforceFrozenNickname(member: GuildMember): Promise<void> {
@@ -47,6 +48,12 @@ async function revertMemberNickname(member: GuildMember, frozenNickname: FrozenN
 }
 
 async function notifyMemberNicknameReverted(member: GuildMember, frozenNickname: FrozenNickname) {
+  if (await isUserOnDmCooldown(member.id)) {
+    return;
+  }
+
+  await setUserDmCooldown(member.id);
+
   await member.user.send({
     embeds: [
       new EmbedBuilder()

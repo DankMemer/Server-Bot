@@ -8,7 +8,7 @@ import { logger } from '../../lib/logger';
 import { memerClient } from '../../lib/memer-client';
 import { registerModerationLog, sendModerationLog } from '../../utils/moderation-log';
 
-export async function enforceNotNewAccounts(member: GuildMember): Promise<void> {
+export async function enforceNoNewAccounts(member: GuildMember): Promise<void> {
   if (!isMemberStillInGuild(member)) {
     return;
   }
