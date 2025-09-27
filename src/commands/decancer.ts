@@ -2,6 +2,7 @@ import { ModerationLogType } from '@prisma/client';
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
+import { fetchFrozenNickname } from '../events/guildMemberUpdate/frozen-nickname';
 import { Command, CommandContext } from '../structures/command';
 import { decancerString } from '../utils/decancer';
 import { canDecancer } from '../utils/moderation';
@@ -36,30 +37,28 @@ export class DecancerCommand extends Command {
     await interaction.deferReply({ ephemeral: true });
 
     if (!targetMember) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('Could not find this member. They probably left.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     if (!moderatorMember) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription('Could not find your member record.')
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     if (!canDecancer(moderatorMember, targetMember)) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription("You cannot change this user's nickname.")
         .setColor(Colors.RED);
+    }
 
-      await interaction.editReply({ embeds: [embed] });
-      return;
+    const frozenNickname = await fetchFrozenNickname(targetUser.id);
+    if (frozenNickname) {
+      return new EmbedBuilder()
+        .setDescription("This nickname is frozen.")
+        .setColor(Colors.RED);
     }
 
     const originalName = targetMember.displayName;
@@ -77,23 +76,17 @@ export class DecancerCommand extends Command {
     }
 
     if (originalName === cleanedName) {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription("This user's nickname is already clean.")
         .setColor(Colors.YELLOW);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     try {
       await targetMember.setNickname(cleanedName, `Decancer by ${interaction.user.username} | ${reason}`);
     } catch {
-      const embed = new EmbedBuilder()
+      return new EmbedBuilder()
         .setDescription("Could not change this user's nickname. Check bot permissions.")
         .setColor(Colors.RED);
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
     }
 
     const log = await registerModerationLog(
@@ -119,32 +112,28 @@ export class DecancerCommand extends Command {
         .setColor(Colors.BLUE),
     );
 
-    await interaction.editReply({
-      embeds: [
-        new EmbedBuilder()
-          .setAuthor({
-            name: `${targetUser.username}'s nickname has been cleaned`,
-            iconURL: targetUser.avatarURL(),
-          })
-          .setColor(Colors.INVISIBLE)
-          .addFields(
-            {
-              name: 'Original Name',
-              value: originalName,
-              inline: true,
-            },
-            {
-              name: 'New Name',
-              value: cleanedName,
-              inline: true,
-            },
-            {
-              name: 'Reason',
-              value: reason,
-              inline: false,
-            },
-          ),
-      ],
-    });
+    return new EmbedBuilder()
+      .setAuthor({
+        name: `${targetUser.username}'s nickname has been cleaned`,
+        iconURL: targetUser.avatarURL(),
+      })
+      .setColor(Colors.INVISIBLE)
+      .addFields(
+        {
+          name: 'Original Name',
+          value: originalName,
+          inline: true,
+        },
+        {
+          name: 'New Name',
+          value: cleanedName,
+          inline: true,
+        },
+        {
+          name: 'Reason',
+          value: reason,
+          inline: false,
+        },
+      );
   };
 }

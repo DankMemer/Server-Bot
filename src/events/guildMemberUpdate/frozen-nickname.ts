@@ -35,7 +35,7 @@ function isMemberStillInGuild(member: GuildMember): boolean {
   return member.guild.members.cache.has(member.id);
 }
 
-async function fetchFrozenNickname(userId: string): Promise<FrozenNickname | null> {
+export async function fetchFrozenNickname(userId: string): Promise<FrozenNickname | null> {
   return await prismaClient.frozenNickname.findUnique({
     where: {
       userID: BigInt(userId),
