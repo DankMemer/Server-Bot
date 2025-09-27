@@ -1,9 +1,9 @@
-import { EmbedBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { Colors } from '../../constants/colors';
-import { addAllowedUrl, fetchUrlsFromDatabase, removeAllowedUrl } from '../../utils/allowed-urls';
+import { addAllowedUrl, fetchUrlsFromDatabase, isUrlAllowed, removeAllowedUrl } from '../../utils/allowed-urls';
 import { normalizeUrl } from '../../utils/url';
 
-export async function handleAllowList(interaction: any): Promise<void> {
+export async function handleAllowList(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
     const allowedUrls = await fetchUrlsFromDatabase();
 
@@ -33,11 +33,22 @@ export async function handleAllowList(interaction: any): Promise<void> {
   }
 }
 
-export async function handleAllowAdd(interaction: any): Promise<void> {
+export async function handleAllowAdd(interaction: ChatInputCommandInteraction): Promise<void> {
   const url = interaction.options.getString('url', true);
 
   try {
     const normalizedUrl = normalizeUrl(url);
+
+    const urlExists = await isUrlAllowed(normalizedUrl);
+
+    if (urlExists) {
+      const embed = new EmbedBuilder()
+        .setDescription(`\`${normalizedUrl}\` is already in the allowed URLs list.`)
+        .setColor(Colors.BLUE);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
 
     await addAllowedUrl(normalizedUrl, interaction.user.id);
 
@@ -55,7 +66,7 @@ export async function handleAllowAdd(interaction: any): Promise<void> {
   }
 }
 
-export async function handleAllowRemove(interaction: any): Promise<void> {
+export async function handleAllowRemove(interaction: ChatInputCommandInteraction): Promise<void> {
   const url = interaction.options.getString('url', true);
 
   try {

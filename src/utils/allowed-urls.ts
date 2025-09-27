@@ -49,6 +49,12 @@ export async function removeAllowedUrl(url: string): Promise<void> {
   await invalidateCache();
 }
 
+export async function isUrlAllowed(url: string): Promise<boolean> {
+  const allowedUrls = await getAllowedUrls();
+
+  return allowedUrls.includes(url);
+}
+
 async function invalidateCache(): Promise<void> {
   await redisClient.del(CACHE_KEY);
 }
