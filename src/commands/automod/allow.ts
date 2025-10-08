@@ -21,7 +21,7 @@ export async function handleAllowList(): Promise<EmbedBuilder> {
       .setDescription(description)
       .setColor(Colors.BLUE);
   } catch (error: any) {
-    logger.error(error.stack);
+    logger.error(`An error occurred while listing allowed URLs: ${error.message}`);
 
     return new EmbedBuilder()
       .setDescription('An error occurred while listing allowed URLs.')
@@ -49,7 +49,7 @@ export async function handleAllowAdd(interaction: ChatInputCommandInteraction): 
       .setDescription(`Added \`${normalizedUrl}\` to the allowed URLs.`)
       .setColor(Colors.GREEN);
   } catch (error: any) {
-    logger.error(error.stack);
+    logger.error(`An error occurred while adding the URL: ${error.message}`);
 
     return new EmbedBuilder()
       .setDescription('An error occurred while adding the URL.')
@@ -69,7 +69,7 @@ export async function handleAllowRemove(interaction: ChatInputCommandInteraction
       .setDescription(`Removed \`${normalizedUrl}\` from the allowed URLs.`)
       .setColor(Colors.GREEN);
   } catch (error: any) {
-    logger.error(error.stack);
+    logger.error(`An error occurred while removing the URL: ${error.message}`);
 
     return new EmbedBuilder()
       .setDescription('An error occurred while removing the URL.')
