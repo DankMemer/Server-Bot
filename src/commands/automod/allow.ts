@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { Colors } from '../../constants/colors';
+import { logger } from '../../lib/logger';
 import { addAllowedUrl, fetchUrlsFromDatabase, isUrlAllowed, removeAllowedUrl } from '../../utils/allowed-urls';
 import { normalizeUrl } from '../../utils/url';
 
@@ -19,7 +20,9 @@ export async function handleAllowList(): Promise<EmbedBuilder> {
       .setTitle('Allowed URLs')
       .setDescription(description)
       .setColor(Colors.BLUE);
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error.stack);
+
     return new EmbedBuilder()
       .setDescription('An error occurred while listing allowed URLs.')
       .setColor(Colors.RED);
@@ -45,7 +48,9 @@ export async function handleAllowAdd(interaction: ChatInputCommandInteraction): 
     return new EmbedBuilder()
       .setDescription(`Added \`${normalizedUrl}\` to the allowed URLs.`)
       .setColor(Colors.GREEN);
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error.stack);
+
     return new EmbedBuilder()
       .setDescription('An error occurred while adding the URL.')
       .setColor(Colors.RED);
@@ -63,7 +68,9 @@ export async function handleAllowRemove(interaction: ChatInputCommandInteraction
     return new EmbedBuilder()
       .setDescription(`Removed \`${normalizedUrl}\` from the allowed URLs.`)
       .setColor(Colors.GREEN);
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error.stack);
+
     return new EmbedBuilder()
       .setDescription('An error occurred while removing the URL.')
       .setColor(Colors.RED);
