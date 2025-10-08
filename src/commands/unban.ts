@@ -4,6 +4,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
+import { canUnban } from '../utils/moderation';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 
 export class UnbanCommand extends Command {
@@ -22,8 +23,18 @@ export class UnbanCommand extends Command {
         .setDescription('Unban reason')
         .setRequired(true),
     );
-  public override servers = [ CONFIG.ids.servers.dmc ];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
+
+  public override servers = [CONFIG.ids.servers.dmc];
+
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder> => {
+    const moderator = interaction.guild.members.resolve(interaction.user.id);
+
+    if (!moderator || !canUnban(moderator)) {
+      return new EmbedBuilder()
+        .setDescription('You do not have permission to use this command.')
+        .setColor(Colors.RED);
+    }
+
     const user = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
 
@@ -36,7 +47,7 @@ export class UnbanCommand extends Command {
     }
 
     await user
-    	.send({
+      .send({
         embeds: [
           new EmbedBuilder()
             .addFields(
@@ -50,7 +61,7 @@ export class UnbanCommand extends Command {
               name: `You've been unbanned in ${interaction.guild.name}`,
               iconURL: interaction.guild.iconURL(),
             })
-    				.setColor(Colors.INVISIBLE),
+            .setColor(Colors.INVISIBLE),
         ],
       })
       .catch(() => null);
@@ -87,6 +98,7 @@ export class UnbanCommand extends Command {
           value: reason,
           inline: false,
         },
-      );
+      )
+      .setColor(Colors.GREEN);
   };
 }

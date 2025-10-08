@@ -5,4 +5,5 @@ export const Emojis = {
   doubleArrowRight: '<:ARR:1067941113459118180>',
   reply: '<:Reply:870665583593660476>',
   replyContinue: '<:ReplyCont:870764844012412938>',
+  refresh: '<a:Refreshui:1379166333689925652>',
 };

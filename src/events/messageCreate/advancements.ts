@@ -1,12 +1,12 @@
-import { setTimeout } from 'node:timers';
 import { Message } from 'discord.js';
 import HolyTime from 'holy-time';
+import { setTimeout } from 'node:timers';
 import { CONFIG } from '../../config';
 import { discordClient } from '../../lib/discord-client';
 
 const REGEX = /Congratulations|endgame/g;
 
-export function advancementsHandler(message: Message): void {
+export async function advancementsHandler(message: Message): Promise<void> {
   if (message.channel.id !== CONFIG.ids.channels.dmc.prestigeOmegaHere) {
     return;
   }
@@ -17,5 +17,5 @@ export function advancementsHandler(message: Message): void {
     return;
   }
 
-  setTimeout(() => message.delete(), HolyTime.Units.SECOND * 3);
+  setTimeout(async () => await message.delete(), HolyTime.Units.SECOND * 3);
 }

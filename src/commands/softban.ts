@@ -7,27 +7,27 @@ import { Command, CommandContext } from '../structures/command';
 import { canBanUser } from '../utils/moderation';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 
-export class BanCommand extends Command {
+export class SoftbanCommand extends Command {
   public override data = new SlashCommandBuilder()
-    .setName('ban')
-    .setDescription('Ban a user')
+    .setName('softban')
+    .setDescription('Ban and unban a user to delete their recent messages')
     .addUserOption(option =>
       option
         .setName('user')
-        .setDescription('User to ban')
+        .setDescription('User to softban')
         .setRequired(true),
     )
     .addStringOption(option =>
       option
         .setName('reason')
-        .setDescription('Ban reason')
+        .setDescription('Softban reason')
         .setRequired(true),
     )
     .addStringOption(
       option =>
         option
-          .setName('delete_messages')
-          .setDescription('Delete messages')
+          .setName('days')
+          .setDescription('Days of messages to delete')
           .addChoices(
             { name: '1 day', value: HolyTime.Units.DAY.toString() },
             { name: '3 days', value: (HolyTime.Units.DAY * 3).toString() },
@@ -35,42 +35,65 @@ export class BanCommand extends Command {
           )
           .setRequired(false),
     );
-  public override servers = [CONFIG.ids.servers.dmc];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | void> => {
+
+  public override servers = [ CONFIG.ids.servers.dmc ];
+
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string | void> => {
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
-    const deleteMessageSeconds = interaction.options.getString('delete_messages', false);
+    const days = interaction.options.getInteger('days', false) ?? 1;
 
     const offenderMember = interaction.guild.members.resolve(offender.id);
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
+    await interaction.deferReply({ ephemeral: true });
+
     if (!offenderMember) {
-      return new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setDescription('Could not find this member. They probably left.')
         .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     if (!moderatorMember) {
-      return new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setDescription('Could not find your member record.')
         .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     if (!canBanUser(moderatorMember, offenderMember)) {
-      return new EmbedBuilder()
-        .setDescription('You cannot ban this user.')
+      const embed = new EmbedBuilder()
+        .setDescription('You cannot softban this user.')
         .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
+
+    const deleteMessageSeconds = days * HolyTime.Units.DAY / HolyTime.Units.SECOND;
 
     try {
       await interaction.guild.members.ban(offender, {
-        reason: `Banned by ${interaction.user.username} | ${reason}`,
-        ...(deleteMessageSeconds ? { deleteMessageSeconds: Number.parseInt(deleteMessageSeconds) / HolyTime.Units.SECOND } : {}),
+        reason: `Softbanned by ${interaction.user.username} | ${reason}`,
+        deleteMessageSeconds: deleteMessageSeconds,
       });
-    } catch {
-      return new EmbedBuilder()
-        .setDescription('Could not ban this member.')
+
+      await interaction.guild.members.unban(
+        offender.id,
+        `Softban unban by ${interaction.user.username} | ${reason}`
+      );
+    } catch (error) {
+      const embed = new EmbedBuilder()
+        .setDescription('Could not softban this member. Make sure I have the necessary permissions.')
         .setColor(Colors.RED);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
     }
 
     await offender
@@ -83,44 +106,50 @@ export class BanCommand extends Command {
                 value: reason,
                 inline: false,
               },
+              {
+                name: 'Days of messages deleted',
+                value: days.toString(),
+                inline: false,
+              },
             )
             .setAuthor({
-              name: `You've been banned in ${interaction.guild.name}`,
+              name: `You've been softbanned in ${interaction.guild.name}`,
               iconURL: interaction.guild.iconURL(),
             })
-            .setColor(Colors.INVISIBLE),
+            .setDescription('A softban removes your recent messages but allows you to rejoin the server immediately.')
+            .setColor(Colors.ORANGE),
         ],
       })
       .catch(() => null);
 
     const log = await registerModerationLog(
-      ModerationLogType.BAN,
+      ModerationLogType.SOFT_BAN,
       BigInt(interaction.user.id),
-      BigInt(offender.id),
+      BigInt(offenderMember.id),
       BigInt(interaction.guildId),
       reason,
     );
 
     await sendModerationLog(
       new EmbedBuilder()
-        .setTitle('🔨 Ban')
+        .setTitle('🧹 Soft Ban')
         .setDescription(
-          `**Offender:** ${offender.username} <@${offender.id}>\n` +
+          `**Offender:** ${offenderMember.user.username} <@${offenderMember.id}>\n` +
           `**Reason:** ${reason}\n` +
-          `**Moderator:** ${interaction.user.username} <@${interaction.user.id}>`,
+          `**Moderator:** ${interaction.user.username} <@${interaction.user.id}>\n` +
+          `**Days deleted:** ${days}`,
         )
-        .setFooter({ text: `ID: ${offender.id} | #${log.id}` })
+        .setFooter({ text: `ID: ${offenderMember.id} | #${log.id}` })
         .setTimestamp()
-        .setColor(Colors.RED),
+        .setColor(Colors.ORANGE),
     );
 
-    await interaction.reply({
-      ephemeral: true,
+    await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setAuthor({
-            name: `${offender.username} has been banned`,
-            iconURL: offender.avatarURL(),
+            name: `${offenderMember.user.username} has been softbanned`,
+            iconURL: offenderMember.user.avatarURL(),
           })
           .setColor(Colors.INVISIBLE)
           .addFields(
@@ -129,9 +158,13 @@ export class BanCommand extends Command {
               value: reason,
               inline: false,
             },
+            {
+              name: 'Days of messages deleted',
+              value: days.toString(),
+              inline: false,
+            },
           ),
       ],
     });
   };
 }
-

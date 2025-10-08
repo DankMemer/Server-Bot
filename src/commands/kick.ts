@@ -4,6 +4,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
+import { canKickUser } from '../utils/moderation';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 
 export class KickCommand extends Command {
@@ -22,27 +23,42 @@ export class KickCommand extends Command {
         .setDescription('Kick reason')
         .setRequired(true),
     );
-  public override servers = [ CONFIG.ids.servers.dmc ];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
-    const user = interaction.options.getUser('user', true);
+  public override servers = [CONFIG.ids.servers.dmc];
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | void> => {
+    const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
 
-    const member = interaction.guild.members.resolve(user.id);
+    const offenderMember = interaction.guild.members.resolve(offender.id);
+    const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
-    if (!member) {
-      return 'Could not find this member. They probably left.';
+    if (!offenderMember) {
+      return new EmbedBuilder()
+        .setDescription('Could not find this member. They probably left.')
+        .setColor(Colors.RED);
+    }
+
+    if (!moderatorMember) {
+      return new EmbedBuilder()
+        .setDescription('Could not find your member record.')
+        .setColor(Colors.RED);
+    }
+
+    if (!canKickUser(moderatorMember, offenderMember)) {
+      return new EmbedBuilder()
+        .setDescription('You cannot kick this user.')
+        .setColor(Colors.RED);
     }
 
     try {
-      await member.kick(`Kicked by ${interaction.user.username} | ${reason}`);
+      await offenderMember.kick(`Kicked by ${interaction.user.username} | ${reason}`);
     } catch {
       return new EmbedBuilder()
         .setDescription('Could not kick this member.')
         .setColor(Colors.RED);
     }
 
-    await member
-    	.send({
+    await offender
+      .send({
         embeds: [
           new EmbedBuilder()
             .addFields(
@@ -56,7 +72,7 @@ export class KickCommand extends Command {
               name: `You've been kicked in ${interaction.guild.name}`,
               iconURL: interaction.guild.iconURL(),
             })
-    				.setColor(Colors.INVISIBLE),
+            .setColor(Colors.INVISIBLE),
         ],
       })
       .catch(() => null);
@@ -64,7 +80,7 @@ export class KickCommand extends Command {
     const log = await registerModerationLog(
       ModerationLogType.KICK,
       BigInt(interaction.user.id),
-      BigInt(member.id),
+      BigInt(offender.id),
       BigInt(interaction.guildId),
       reason,
     );
@@ -73,22 +89,22 @@ export class KickCommand extends Command {
       new EmbedBuilder()
         .setTitle('👞 Kick')
         .setDescription(
-          `**Offender:** ${member.user.username} <@${member.id}>\n` +
+          `**Offender:** ${offender.username} <@${offender.id}>\n` +
           `**Reason:** ${reason}\n` +
           `**Moderator:** ${interaction.user.username} <@${interaction.user.id}>`,
         )
-        .setFooter({ text: `ID: ${member.id} | #${log.id}` })
+        .setFooter({ text: `ID: ${offender.id} | #${log.id}` })
         .setTimestamp()
         .setColor(Colors.ORANGE),
     );
 
-    interaction.reply({
+    await interaction.reply({
       ephemeral: true,
       embeds: [
         new EmbedBuilder()
           .setAuthor({
-            name: `${member.user.username} has been kicked`,
-            iconURL: member.user.avatarURL(),
+            name: `${offender.username} has been kicked`,
+            iconURL: offender.avatarURL(),
           })
           .setColor(Colors.INVISIBLE)
           .addFields(

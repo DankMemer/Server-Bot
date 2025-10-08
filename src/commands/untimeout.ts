@@ -4,6 +4,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
+import { canUntimeout } from '../utils/moderation';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 
 export class UntimeoutCommand extends Command {
@@ -22,15 +23,27 @@ export class UntimeoutCommand extends Command {
         .setDescription('Untimeout reason')
         .setRequired(true),
     );
-  public override servers = [ CONFIG.ids.servers.dmc ];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
+
+  public override servers = [CONFIG.ids.servers.dmc];
+
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder> => {
+    const moderator = interaction.guild.members.resolve(interaction.user.id);
+
+    if (!moderator || !canUntimeout(moderator)) {
+      return new EmbedBuilder()
+        .setDescription('You do not have permission to use this command.')
+        .setColor(Colors.RED);
+    }
+
     const user = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
 
     const member = interaction.guild.members.resolve(user.id);
 
     if (!member) {
-      return 'Could not find this member. They probably left.';
+      return new EmbedBuilder()
+        .setDescription('Could not find this member. They probably left.')
+        .setColor(Colors.RED);
     }
 
     try {
@@ -42,7 +55,7 @@ export class UntimeoutCommand extends Command {
     }
 
     await member
-    	.send({
+      .send({
         embeds: [
           new EmbedBuilder()
             .addFields(
@@ -56,7 +69,7 @@ export class UntimeoutCommand extends Command {
               name: `You've been untimed out in ${interaction.guild.name}`,
               iconURL: interaction.guild.iconURL(),
             })
-    				.setColor(Colors.INVISIBLE),
+            .setColor(Colors.INVISIBLE),
         ],
       })
       .catch(() => null);

@@ -3,6 +3,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
+import { canDmUser } from '../utils/moderation';
 
 export class DmCommand extends Command {
   public override data = new SlashCommandBuilder()
@@ -26,14 +27,22 @@ export class DmCommand extends Command {
         .setDescription('Whether to sign the dm')
         .setRequired(true),
     );
-  public override servers = [ CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo ];
+
+  public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
+
   public override execute = async ({ interaction }: CommandContext): Promise<string> => {
-    const user = interaction.options.getUser('user', true);
+    const staff = interaction.guild.members.resolve(interaction.user.id);
+
+    if (!staff || !canDmUser(staff)) {
+      return 'You do not have permission to use this command.';
+    }
+
+    const target = interaction.options.getUser('user', true);
     const message = interaction.options.getString('message', true);
     const signed = interaction.options.getBoolean('sign', true);
 
     try {
-      await user.send({
+      await target.send({
         embeds: [
           new EmbedBuilder({
             author: {

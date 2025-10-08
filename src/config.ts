@@ -50,11 +50,18 @@ export const CONFIG = {
     },
     roles: {
       dmo: {
+        serverManager: variable('IDS_ROLES_DMO_SERVER_MANAGER', 'string'),
+        staff: variable('IDS_ROLES_DMO_STAFF', 'string'),
+        trialModerator: variable('IDS_ROLES_DMO_TRIAL_MODERATOR', 'string'),
         support: variable('IDS_ROLES_DMO_SUPPORT', 'string'),
         assist: variable('IDS_ROLES_DMO_ASSIST', 'string'),
         moderator: variable('IDS_ROLES_DMO_MODERATOR', 'string'),
       },
       dmc: {
+        serverManager: variable('IDS_ROLES_DMC_SERVER_MANAGER', 'string'),
+        communityManager: variable('IDS_ROLES_DMC_COMMUNITY_MANAGER', 'string'),
+        heistManager: variable('IDS_ROLES_DMC_HEIST_MANAGER', 'string'),
+        staff: variable('IDS_ROLES_DMC_STAFF', 'string'),
         moderator: variable('IDS_ROLES_DMC_MODERATOR', 'string'),
         supportModerator: variable('IDS_ROLES_DMC_SUPPORT_MODERATOR', 'string'),
         trialModerator: variable('IDS_ROLES_DMC_TRIAL_MODERATOR', 'string'),

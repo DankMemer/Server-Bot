@@ -9,7 +9,7 @@ const WHITELISTED_ROLES = [
 ];
 const DISCORD_ID_REGEX = /\d{17,19}/g;
 
-export function listHandler(message: Message): void {
+export async function listHandler(message: Message): Promise<void> {
   if (message.channel.type !== ChannelType.GuildText) {
     return;
   }
@@ -18,7 +18,7 @@ export function listHandler(message: Message): void {
     return;
   }
 
-  for (const prefix of [ '-list', '@' ]) {
+  for (const prefix of ['-list', '@']) {
     if (!message.content.startsWith(prefix)) {
       continue;
     }
@@ -29,6 +29,6 @@ export function listHandler(message: Message): void {
       continue;
     }
 
-    message.channel.send(roleIDs.map(id => `<@${id}>`).join(' '));
+    await message.channel.send(roleIDs.map(id => `<@${id}>`).join(' '));
   }
 }

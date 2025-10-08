@@ -3,6 +3,7 @@ import { CONFIG } from '../../config';
 import { Colors } from '../../constants/colors';
 import { prismaClient } from '../../lib/prisma-client';
 import { Command, CommandContext } from '../../structures/command';
+import { canManageLockdown } from '../../utils/moderation';
 
 export class LockdownCommand extends Command {
   public override data = new SlashCommandBuilder()
@@ -53,11 +54,28 @@ export class LockdownCommand extends Command {
       option
         .setName('server')
         .setDescription('Toggle server lockdown'),
+    )
+    .addSubcommand(option =>
+      option
+        .setName('prune')
+        .setDescription('Remove invalid channel entries from lockdown system'),
     );
 
-  public override servers = [ CONFIG.ids.servers.dmc ];
+  public override servers = [CONFIG.ids.servers.dmc];
 
-  public override execute = async ({ interaction, userEntry }: CommandContext): Promise<void | string> => {
+  public override execute = async ({ interaction, userEntry }: CommandContext): Promise<void | string | EmbedBuilder> => {
+    const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
+
+    if (!moderatorMember) {
+      return 'Could not find your member record.';
+    }
+
+    if (!canManageLockdown(moderatorMember)) {
+      return new EmbedBuilder()
+        .setDescription('You do not have permission to manage lockdown. You need Administrator permissions, Manage Server permissions, or the Server Manager role.')
+        .setColor(Colors.RED);
+    }
+
     const subcommand = interaction.options.getSubcommand();
 
     switch (subcommand) {
@@ -194,6 +212,57 @@ export class LockdownCommand extends Command {
                   .setLabel('Confirm')
                   .setCustomId(`lockdown-confirm:${userEntry.id}`)
                   .setStyle(ButtonStyle.Success),
+              ),
+          ],
+        });
+      }
+
+      case 'prune': {
+        const lockdownChannels = await prismaClient.lockdownChannel.findMany({
+          where: {
+            guildID: BigInt(interaction.guild.id),
+          },
+        });
+
+        if (lockdownChannels.length === 0) {
+          return 'There are no channels in the lockdown system to prune!';
+        }
+
+        const deletedChannels = [];
+        for (const lockdownChannel of lockdownChannels) {
+          const discordChannel = interaction.guild.channels.resolve(lockdownChannel.id.toString());
+          if (!discordChannel) {
+            deletedChannels.push(lockdownChannel);
+          }
+        }
+
+        if (deletedChannels.length === 0) {
+          return 'No invalid channels found in lockdown system. All channels are valid!';
+        }
+
+        const channelList = deletedChannels
+          .map(channel => `<#${channel.id}> (\`${channel.id}\`)`)
+          .join('\n');
+
+        return void interaction.reply({
+          embeds: [
+            new EmbedBuilder({
+              title: 'Confirm Lockdown Prune',
+              description: `These ${deletedChannels.length} invalid channel${deletedChannels.length === 1 ? '' : 's'} will be removed from lockdown system:\n\n${channelList}\n\n**Are you sure?**`,
+              color: Colors.ORANGE,
+            }),
+          ],
+          components: [
+            new ActionRowBuilder<ButtonBuilder>()
+              .addComponents(
+                new ButtonBuilder()
+                  .setLabel('Confirm Prune')
+                  .setCustomId(`lockdown-prune-confirm:${userEntry.id}:${deletedChannels.map(c => c.id).join(',')}`)
+                  .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
+                  .setLabel('Cancel')
+                  .setCustomId(`lockdown-prune-cancel:${userEntry.id}`)
+                  .setStyle(ButtonStyle.Secondary),
               ),
           ],
         });

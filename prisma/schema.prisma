@@ -21,8 +21,9 @@ model User {
   starboardMessages     StarboardMessage[]
   starboardMessageStars StarboardMessageStar[]
 
-  tempBan     TempBan?
-  chadChannel ChadChannel?
+  tempBan        TempBan?
+  chadChannel    ChadChannel?
+  frozenNickname FrozenNickname?
 }
 
 enum ModerationLogType {
@@ -32,6 +33,10 @@ enum ModerationLogType {
   UNBAN
   UNTIME_OUT
   TEMP_BAN
+  SOFT_BAN
+  DECANCER
+  FREEZE_NICK
+  UNFREEZE_NICK
 }
 
 model ModerationLog {
@@ -135,4 +140,28 @@ model LockdownChannel {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model FrozenNickname {
+  id BigInt @id @default(autoincrement())
+
+  user   User   @relation(fields: [userID], references: [id], onDelete: Cascade)
+  userID BigInt @unique
+
+  moderatorID BigInt
+  guildID BigInt
+  frozenNickname String
+  reason String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AllowedUrl {
+  id BigInt @id @default(autoincrement())
+
+  url String @unique
+  addedBy BigInt
+
+  createdAt DateTime @default(now())
 }

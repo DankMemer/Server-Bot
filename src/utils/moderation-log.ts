@@ -8,7 +8,7 @@ import { upsertUsers } from './db';
 export async function sendModerationLog(embed: EmbedBuilder): Promise<void> {
   const moderationLog = discordClient.bot.channels.resolve(CONFIG.ids.channels.dmc.modLogs);
 
-  if (moderationLog.isTextBased()) {
+  if (moderationLog?.isTextBased()) {
     await moderationLog.send({ embeds: [ embed ] });
   }
 }

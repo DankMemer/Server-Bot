@@ -3,6 +3,7 @@ import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { prismaClient } from '../lib/prisma-client';
 import { Command, CommandContext } from '../structures/command';
+import { canReason } from '../utils/moderation';
 import { sendModerationLog } from '../utils/moderation-log';
 
 export class ReasonCommand extends Command {
@@ -21,8 +22,16 @@ export class ReasonCommand extends Command {
         .setDescription('Timeout reason')
         .setRequired(true),
     );
-  public override servers = [ CONFIG.ids.servers.dmc ];
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
+
+  public override servers = [CONFIG.ids.servers.dmc];
+
+  public override execute = async ({ interaction }: CommandContext): Promise<string | void> => {
+    const moderator = interaction.guild.members.resolve(interaction.user.id);
+
+    if (!moderator || !canReason(moderator)) {
+      return 'You do not have permission to use this command.';
+    }
+
     const id = interaction.options.getNumber('id', true);
     const reason = interaction.options.getString('reason', true);
 
@@ -58,7 +67,7 @@ export class ReasonCommand extends Command {
         .setColor(Colors.WHITE),
     );
 
-    interaction.reply({
+    await interaction.reply({
       ephemeral: true,
       embeds: [
         new EmbedBuilder()

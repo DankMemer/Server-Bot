@@ -1,7 +1,7 @@
 import { ChannelType, Message } from 'discord.js';
 
-export function crosspostHandler(message: Message): void {
+export async function crosspostHandler(message: Message): Promise<void> {
   if (message.channel.type === ChannelType.GuildAnnouncement) {
-    message.crosspost();
+    await message.crosspost();
   }
 }
