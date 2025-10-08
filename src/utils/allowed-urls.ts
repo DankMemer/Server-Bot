@@ -13,7 +13,10 @@ export async function getAllowedUrls(): Promise<string[]> {
 
   const urls = await fetchUrlsFromDatabase();
 
-  await redisClient.sAdd(CACHE_KEY, urls);
+  if (urls.length > 0) {
+    await redisClient.sAdd(CACHE_KEY, urls);
+  }
+
   await redisClient.expire(CACHE_KEY, CACHE_TTL);
 
   return urls;
