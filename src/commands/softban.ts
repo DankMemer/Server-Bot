@@ -1,6 +1,5 @@
 import { ModerationLogType } from '@prisma/client';
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import HolyTime from 'holy-time';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
@@ -27,11 +26,11 @@ export class SoftbanCommand extends Command {
       option =>
         option
           .setName('delete_messages')
-          .setDescription('Delete messages')
+          .setDescription('Delete messages (days)')
           .addChoices(
-            { name: '1 day', value: HolyTime.Units.DAY.toString() },
-            { name: '3 days', value: (HolyTime.Units.DAY * 3).toString() },
-            { name: '7 days', value: (HolyTime.Units.DAY * 7).toString() },
+            { name: '1 day', value: '1' },
+            { name: '3 days', value: '3' },
+            { name: '7 days', value: '7' },
           )
           .setRequired(false),
     );
@@ -43,12 +42,12 @@ export class SoftbanCommand extends Command {
 
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
-    const deleteMessageSeconds = interaction.options.getString('delete_messages', false);
+    const deleteMessageDaysOption = interaction.options.getString('delete_messages', false);
 
     const offenderMember = interaction.guild.members.resolve(offender.id);
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
-    const days = deleteMessageSeconds ? Number.parseInt(deleteMessageSeconds) / HolyTime.Units.DAY : 1;
+    const days = deleteMessageDaysOption ? Number.parseInt(deleteMessageDaysOption, 10) : 1;
 
     if (!offenderMember) {
       return new EmbedBuilder()
@@ -71,7 +70,7 @@ export class SoftbanCommand extends Command {
     try {
       await interaction.guild.members.ban(offender, {
         reason: `Softbanned by ${interaction.user.username} | ${reason}`,
-        ...(deleteMessageSeconds ? { deleteMessageSeconds: Number.parseInt(deleteMessageSeconds) / HolyTime.Units.SECOND } : {}),
+        ...(deleteMessageDaysOption ? { deleteMessageDays: days } : {}),
       });
 
       await interaction.guild.members.unban(
