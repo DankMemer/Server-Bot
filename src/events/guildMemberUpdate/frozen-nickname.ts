@@ -25,7 +25,6 @@ export async function enforceFrozenNickname(member: GuildMember): Promise<void> 
   try {
     await revertMemberNickname(member, frozenNickname);
     await notifyMemberNicknameReverted(member, frozenNickname);
-    await logNicknameReverted(member, frozenNickname);
   } catch (error) {
     logger.error(`Failed to revert frozen nickname for user ${member.id}: ${error}`);
   }
@@ -70,35 +69,4 @@ async function notifyMemberNicknameReverted(member: GuildMember, frozenNickname:
   }).catch(() => {
     // Ignore DM failures (user has DMs disabled, etc.)
   });
-}
-
-async function logNicknameReverted(member: GuildMember, frozenNickname: FrozenNickname): Promise<void> {
-  const log = await registerModerationLog(
-    ModerationLogType.FREEZE_NICK,
-    BigInt(discordClient.bot.user.id),
-    BigInt(member.id),
-    BigInt(member.guild.id),
-    `Enforced frozen nickname: ${frozenNickname.reason}`,
-  );
-
-  const originalNickname = member.displayName;
-
-  if (member.guild.id !== CONFIG.ids.servers.dmc) {
-    return;
-  }
-
-  await sendModerationLog(
-    new EmbedBuilder()
-      .setTitle('🧊 Frozen Nickname Enforced')
-      .setDescription(
-        `**User:** ${member.user.username} <@${member.id}>\n` +
-        `**Original Nickname:** ${originalNickname}\n` +
-        `**Enforced Nickname:** ${frozenNickname.frozenNickname}\n` +
-        `**Reason:** ${frozenNickname.reason}\n` +
-        `**Moderator:** ${discordClient.bot.user.username} <@${discordClient.bot.user.id}>`,
-      )
-      .setFooter({ text: `ID: ${member.id} | #${log.id}` })
-      .setTimestamp()
-      .setColor(Colors.BLUE),
-  );
 }
