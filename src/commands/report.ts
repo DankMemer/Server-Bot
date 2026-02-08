@@ -40,7 +40,7 @@ export class ReportCommand extends Command {
     const reporter = interaction.guild.members.resolve(interaction.user.id);
 
     if (!member) {
-      return 'Could not find this member. They probably left.';
+      return void await interaction.reply(ephemeralResponse('Could not find this member. They probably left.'));
     }
 
     const reportsChannel = discordClient.bot.channels.resolve(CONFIG.ids.channels.dmc.reports) as TextChannel;
