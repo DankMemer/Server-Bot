@@ -29,6 +29,11 @@ export async function mediaChannelHandler(message: Message): Promise<void> {
     return;
   }
 
+  if (!mediaChannel.allowText && message.content.trim().length > 0) {
+    await deleteMessage(message);
+    return;
+  }
+
   const attachments = [...message.attachments.values()];
 
   const isImage = (contentType: string | null): boolean => !!contentType && contentType.startsWith('image/');

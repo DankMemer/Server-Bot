@@ -4,11 +4,12 @@ import { ephemeralResponse } from '../../../utils/format';
 import { canManageMediaChannels } from '../../../utils/moderation';
 import { buildMediaChannelEditReply, MediaChannelToggleKey } from '../ui';
 
-const TOGGLE_FIELDS: Record<MediaChannelToggleKey, 'allowMultipleMedia' | 'allowBotsBypass' | 'allowStaffBypass' | 'allowVideos'> = {
+const TOGGLE_FIELDS: Record<MediaChannelToggleKey, 'allowMultipleMedia' | 'allowBotsBypass' | 'allowStaffBypass' | 'allowVideos' | 'allowText'> = {
   multipleMedia: 'allowMultipleMedia',
   botsBypass: 'allowBotsBypass',
   staffBypass: 'allowStaffBypass',
   videos: 'allowVideos',
+  text: 'allowText',
 };
 
 export class MediaChannelToggleComponent extends Component {
