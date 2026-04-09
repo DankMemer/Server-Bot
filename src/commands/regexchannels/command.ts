@@ -26,8 +26,8 @@ export class RegexChannelsCommand extends Command {
         .addStringOption(subOption =>
           subOption
             .setName('regex')
-            .setDescription('Regex messages must match. Accepts raw pattern or /pattern/flags syntax.')
-            .setRequired(true),
+            .setDescription('Regex messages must match. Accepts raw pattern or /pattern/flags syntax. Omit to start in Delete All mode.')
+            .setRequired(false),
         ),
     )
     .addSubcommand(option =>
@@ -80,11 +80,14 @@ export class RegexChannelsCommand extends Command {
     switch (subcommand) {
       case 'add': {
         const channel = interaction.options.getChannel('channel', true);
-        const regexInput = interaction.options.getString('regex', true);
+        const regexInput = interaction.options.getString('regex', false);
 
-        const parsed = parseRegex(regexInput);
-        if (!parsed) {
-          return 'Invalid regex. Provide a valid pattern or use `/pattern/flags` syntax.';
+        let parsed = null;
+        if (regexInput !== null) {
+          parsed = parseRegex(regexInput);
+          if (!parsed) {
+            return 'Invalid regex. Provide a valid pattern or use `/pattern/flags` syntax.';
+          }
         }
 
         const existing = await prismaClient.regexChannel.findUnique({
@@ -99,12 +102,15 @@ export class RegexChannelsCommand extends Command {
           data: {
             id: BigInt(channel.id),
             guildID: BigInt(interaction.guild.id),
-            pattern: parsed.pattern,
-            flags: parsed.flags,
+            pattern: parsed?.pattern ?? '',
+            flags: parsed?.flags ?? '',
+            deleteAll: parsed === null,
           },
         });
 
-        return `Successfully added <#${channel.id}> as a regex channel with regex \`${formatRegex(parsed.pattern, parsed.flags)}\`!`;
+        return parsed
+          ? `Successfully added <#${channel.id}> as a regex channel with regex \`${formatRegex(parsed.pattern, parsed.flags)}\`!`
+          : `Successfully added <#${channel.id}> as a regex channel in Delete All mode. Use \`/regexchannels edit\` to set a regex later.`;
       }
 
       case 'remove': {
