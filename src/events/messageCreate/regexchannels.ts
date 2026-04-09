@@ -6,7 +6,7 @@ import { prismaClient } from '../../lib/prisma-client';
 import { isStaff } from '../../utils/moderation';
 
 export async function regexChannelHandler(message: Message): Promise<void> {
-  if (message.guild?.id !== CONFIG.ids.servers.dmc) {
+  if (message.guild?.id !== CONFIG.ids.servers.dmc && message.guild?.id !== CONFIG.ids.servers.dmo) {
     return;
   }
 
