@@ -26,7 +26,7 @@ export class RegexChannelsCommand extends Command {
         .addStringOption(subOption =>
           subOption
             .setName('regex')
-            .setDescription('Regex messages must match. Accepts raw pattern or /pattern/flags syntax. Omit to start in Delete All mode.')
+            .setDescription('Regex messages must match. Pattern or /pattern/flags syntax. Omit for Delete All mode.')
             .setRequired(false),
         ),
     )

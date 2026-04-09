@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prisma-generate": "npx prisma db push",
+    "prisma-generate": "npx prisma generate",
     "sync": "tsc && node ./dist/scripts/sync.js",
     "wipe-redis": "tsc && node ./dist/scripts/wipe-redis.js",
     "dev": "tsc && node dist/index.js"
