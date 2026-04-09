@@ -32,14 +32,23 @@ const MODERATION_LOG_MAP: Record<ModerationLogType, string> = {
 };
 
 const SERVER_LABELS: Record<string, string> = {
-  [CONFIG.ids.servers.dmc]: 'DMC',
-  [CONFIG.ids.servers.dmo]: 'DMO',
+  [CONFIG.ids.servers.dmc]: 'Community',
+  [CONFIG.ids.servers.dmo]: 'Support',
 };
+
+const SERVER_FILTER_TO_GUILD: Record<string, string> = {
+  COMMUNITY: CONFIG.ids.servers.dmc,
+  SUPPORT: CONFIG.ids.servers.dmo,
+};
+
+const SERVER_FILTER_KEYS = new Set(Object.keys(SERVER_FILTER_TO_GUILD));
 
 export class ModerationLogListPaginator extends Paginator {
   public override id = 'modlog-list';
   public override itemsPerPage = 5;
   public override filters = {
+    COMMUNITY: 'Server: Community',
+    SUPPORT: 'Server: Support',
     BAN: 'Ban',
     KICK: 'Kick',
     TIME_OUT: 'Time Out',
@@ -63,8 +72,16 @@ export class ModerationLogListPaginator extends Paginator {
       },
     });
 
-    if (filters.length > 0) {
-      moderationLogs = moderationLogs.filter(log => filters.includes(log.type));
+    const serverFilters = filters.filter(filter => SERVER_FILTER_KEYS.has(filter));
+    const typeFilters = filters.filter(filter => !SERVER_FILTER_KEYS.has(filter));
+
+    if (typeFilters.length > 0) {
+      moderationLogs = moderationLogs.filter(log => typeFilters.includes(log.type));
+    }
+
+    if (serverFilters.length > 0) {
+      const allowedGuildIDs = new Set(serverFilters.map(filter => SERVER_FILTER_TO_GUILD[filter]));
+      moderationLogs = moderationLogs.filter(log => allowedGuildIDs.has(log.guildID.toString()));
     }
 
     return {
