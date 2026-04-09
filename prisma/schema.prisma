@@ -158,6 +158,22 @@ model FrozenNickname {
   updatedAt DateTime @updatedAt
 }
 
+model MediaChannel {
+  id BigInt @id
+
+  guildID BigInt
+
+  allowMultipleMedia Boolean @default(true)
+  allowBotsBypass    Boolean @default(true)
+  allowStaffBypass   Boolean @default(true)
+  allowVideos        Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index(guildID)
+}
+
 model AllowedUrl {
   id BigInt @id @default(autoincrement())
 

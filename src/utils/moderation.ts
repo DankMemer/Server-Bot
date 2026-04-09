@@ -144,6 +144,10 @@ export function canManageAutomod(member: GuildMember): boolean {
   return isAdminOrManager(member);
 }
 
+export function canManageMediaChannels(member: GuildMember): boolean {
+  return member.roles.cache.has(CONFIG.ids.roles.dmc.serverManager);
+}
+
 export function canTimeoutUser(moderator: GuildMember, offender: GuildMember): boolean {
   if (!hasTimeoutPermission(moderator)) {
     return false;

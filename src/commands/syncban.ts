@@ -12,6 +12,7 @@ export class SyncBanCommand extends Command {
   public override data = new SlashCommandBuilder()
     .setName('syncban')
     .setDescription('Ban a user in both DMC and DMO at once')
+    .setDefaultMemberPermissions('0')
     .addUserOption(option =>
       option
         .setName('user')

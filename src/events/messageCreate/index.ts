@@ -4,6 +4,7 @@ import { advancementsHandler } from './advancements';
 import { crosspostHandler } from './crosspost';
 import { linkHandler } from './links';
 import { listHandler } from './list';
+import { mediaChannelHandler } from './mediachannel';
 import { suggestionsHandler } from './suggestions';
 import { usernameHandler } from './username';
 import { xpHandler } from './xp';
@@ -16,6 +17,7 @@ export default async function messageCreate(message: Message): Promise<void> {
     advancementsHandler(message),
     listHandler(message),
     linkHandler(message),
+    mediaChannelHandler(message),
     usernameHandler(message, userEntry),
     xpHandler(message, userEntry),
     suggestionsHandler(message),
