@@ -21,16 +21,16 @@ export class DmCommand extends Command {
         .setDescription('Message to dm')
         .setRequired(true),
     )
-    .addBooleanOption(option =>
-      option
-        .setName('sign')
-        .setDescription('Whether to sign the dm')
-        .setRequired(true),
-    )
     .addStringOption(option =>
       option
         .setName('reason')
         .setDescription('Reason for the dm')
+        .setRequired(false),
+    )
+    .addBooleanOption(option =>
+      option
+        .setName('sign')
+        .setDescription('Whether to sign the dm (defaults to unsigned)')
         .setRequired(false),
     );
 
@@ -45,7 +45,7 @@ export class DmCommand extends Command {
 
     const target = interaction.options.getUser('user', true);
     const message = interaction.options.getString('message', true);
-    const signed = interaction.options.getBoolean('sign', true);
+    const signed = interaction.options.getBoolean('sign', false) ?? false;
     const reason = interaction.options.getString('reason', false);
 
     try {
