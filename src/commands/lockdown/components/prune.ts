@@ -21,10 +21,10 @@ export class LockdownPruneConfirmComponent extends Component {
       return void interaction.reply(ephemeralResponse('You do not have permission to manage lockdown.'));
     }
 
-    const channelIdsToDelete = customIdParts[2] ? customIdParts[2].split(',').map(id => BigInt(id)) : [];
+    const ruleIdsToDelete = customIdParts[2] ? customIdParts[2].split(',').map(id => BigInt(id)) : [];
 
-    if (channelIdsToDelete.length === 0) {
-      return void interaction.reply(ephemeralResponse('No channels specified for deletion.'));
+    if (ruleIdsToDelete.length === 0) {
+      return void interaction.reply(ephemeralResponse('No rules specified for deletion.'));
     }
 
     await interaction.update({
@@ -37,24 +37,21 @@ export class LockdownPruneConfirmComponent extends Component {
       components: [],
     });
 
-    await prismaClient.lockdownChannel.deleteMany({
+    const result = await prismaClient.lockdownChannel.deleteMany({
       where: {
         id: {
-          in: channelIdsToDelete,
+          in: ruleIdsToDelete,
         },
         guildID: BigInt(interaction.guild.id), // Extra safety check
+        locked: false, // Never prune locked rules — they have live snapshots to restore
       },
     });
-
-    const channelList = channelIdsToDelete
-      .map(id => `<#${id}> (\`${id}\`)`)
-      .join('\n');
 
     await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setTitle('Lockdown Prune Complete')
-          .setDescription(`Successfully removed ${channelIdsToDelete.length} invalid channel${channelIdsToDelete.length === 1 ? '' : 's'} from lockdown system:\n\n${channelList}`)
+          .setDescription(`Successfully removed ${result.count} invalid rule${result.count === 1 ? '' : 's'} from the lockdown system.`)
           .setColor(Colors.GREEN),
       ],
     });

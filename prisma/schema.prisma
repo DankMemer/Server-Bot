@@ -134,13 +134,24 @@ model ChadChannel {
 }
 
 model LockdownChannel {
-  id BigInt @id
+  id BigInt @id @default(autoincrement())
 
-  locked  Boolean
-  guildID BigInt
+  channelID BigInt
+  guildID   BigInt
+
+  roleID     BigInt?
+  permission String?
+
+  snapshotAllow String?
+  snapshotDeny  String?
+  hadOverwrite  Boolean @default(false)
+
+  locked Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([channelID, guildID])
 }
 
 model FrozenNickname {

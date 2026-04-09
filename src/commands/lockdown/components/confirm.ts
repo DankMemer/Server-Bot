@@ -1,9 +1,11 @@
-import { ChannelType, EmbedBuilder } from 'discord.js';
+import { LockdownChannel } from '@prisma/client';
+import { EmbedBuilder, GuildChannel } from 'discord.js';
 import { Colors } from '../../../constants/colors';
 import { prismaClient } from '../../../lib/prisma-client';
 import { Component, ComponentContext } from '../../../structures/component';
 import { ephemeralResponse } from '../../../utils/format';
 import { canManageLockdown } from '../../../utils/moderation';
+import { groupRulesByRole, lockRuleGroup, unlockRuleGroup } from '../perms';
 
 export class LockdownConfirmComponent extends Component {
   public override id = 'lockdown-confirm';
@@ -14,7 +16,7 @@ export class LockdownConfirmComponent extends Component {
     }
 
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
-    
+
     if (!moderatorMember || !canManageLockdown(moderatorMember)) {
       return void interaction.reply(ephemeralResponse('You do not have permission to manage lockdown.'));
     }
@@ -29,62 +31,56 @@ export class LockdownConfirmComponent extends Component {
       components: [],
     });
 
-    const channels = await prismaClient.lockdownChannel.findMany({
+    const rules = await prismaClient.lockdownChannel.findMany({
       where: {
         guildID: BigInt(interaction.guild.id),
       },
     });
 
-    const lockdown = channels.some(lockdownChannel => lockdownChannel.locked);
+    const lockdown = rules.some(rule => rule.locked);
+    const reason = `/lockdown server by @${interaction.user.username} (${interaction.user.id})`;
 
-    for (const channel of channels.filter(c => lockdown ? c.locked : true)) {
+    // Group rules by channel, then by role within each channel.
+    const byChannel = new Map<string, LockdownChannel[]>();
+    for (const rule of rules) {
+      if (lockdown && !rule.locked) continue;
+      const key = rule.channelID.toString();
+      const arr = byChannel.get(key);
+      if (arr) {
+        arr.push(rule);
+      } else {
+        byChannel.set(key, [rule]);
+      }
+    }
+
+    for (const [channelID, channelRules] of byChannel) {
       await new Promise(resolve => setTimeout(resolve, 3000));
-      await prismaClient.lockdownChannel.update({
-        where: {
-          id: channel.id,
-        },
-        data: {
-          locked: !lockdown,
-        },
-      });
 
-      const discordChannel = interaction.guild.channels.resolve(channel.id.toString());
-
+      const discordChannel = interaction.guild.channels.resolve(channelID) as GuildChannel | null;
       if (!discordChannel) {
         continue;
       }
 
-      if (discordChannel.type === ChannelType.GuildText) {
-        await discordChannel.permissionOverwrites.edit(
-          interaction.guild.id,
-          {
-            SendMessages: !!lockdown,
-          },
-          {
-            reason: `/lockdown server by @${interaction.user.username} (${interaction.user.id})`,
-          },
-        );
-      } else if (discordChannel.type === ChannelType.GuildVoice) {
-        await discordChannel.permissionOverwrites.edit(
-          interaction.guild.id,
-          {
-            Connect: !!lockdown,
-          },
-          {
-            reason: `/lockdown channel by @${interaction.user.username} (${interaction.user.id})`,
-          },
-        );
+      const groups = groupRulesByRole(channelRules);
+      for (const groupRules of groups.values()) {
+        if (lockdown) {
+          if (groupRules.some(rule => rule.locked)) {
+            await unlockRuleGroup(discordChannel, groupRules, reason);
+          }
+        } else {
+          await lockRuleGroup(discordChannel, groupRules, reason);
+        }
       }
-
-      await interaction.editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle('Lockdown')
-            .setDescription(`Done ${lockdown ? 'unlocking' : 'locking'} the server`)
-            .setColor(Colors.GREEN),
-        ],
-        components: [],
-      });
     }
+
+    await interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle('Lockdown')
+          .setDescription(`Done ${lockdown ? 'unlocking' : 'locking'} the server`)
+          .setColor(Colors.GREEN),
+      ],
+      components: [],
+    });
   }
 }
