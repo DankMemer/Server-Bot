@@ -175,6 +175,24 @@ model MediaChannel {
   @@index(guildID)
 }
 
+model RegexChannel {
+  id BigInt @id
+
+  guildID BigInt
+
+  pattern String
+  flags   String @default("")
+
+  allowBotsBypass  Boolean @default(true)
+  allowStaffBypass Boolean @default(true)
+  deleteAll        Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index(guildID)
+}
+
 model AllowedUrl {
   id BigInt @id @default(autoincrement())
 
