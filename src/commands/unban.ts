@@ -5,6 +5,7 @@ import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
 import { canUnban } from '../utils/moderation';
+import { markActionInFlight } from '../utils/moderation-action-cache';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 
 export class UnbanCommand extends Command {
@@ -39,6 +40,7 @@ export class UnbanCommand extends Command {
     const reason = interaction.options.getString('reason', true);
 
     try {
+      markActionInFlight(interaction.guildId, user.id, 'UNBAN');
       await interaction.guild.members.unban(user.id, `Unbanned by ${interaction.user.username} | ${reason}`);
     } catch {
       return new EmbedBuilder()

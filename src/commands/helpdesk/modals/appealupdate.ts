@@ -1,8 +1,11 @@
+import { ModerationLogType } from '@prisma/client';
 import { EmbedBuilder, TextChannel } from 'discord.js';
 import { CONFIG } from '../../../config';
 import { Colors } from '../../../constants/colors';
 import { discordClient } from '../../../lib/discord-client';
 import { Modal, ModalContext } from '../../../structures/modal';
+import { markActionInFlight } from '../../../utils/moderation-action-cache';
+import { registerModerationLog, sendModerationLog } from '../../../utils/moderation-log';
 
 export class HelpDeskAppealUpdateModal extends Modal {
   public override id = 'helpdesk-appealupdate';
@@ -17,7 +20,38 @@ export class HelpDeskAppealUpdateModal extends Modal {
     const user = await discordClient.bot.users.fetch(userID);
 
     if (accepted) {
-      await guild.members.unban(userID, 'Appealed').catch(() => {});
+      let unbanned = false;
+      try {
+        markActionInFlight(guild.id, userID, 'UNBAN');
+        await guild.members.unban(userID, `Appeal accepted by ${interaction.user.username}`);
+        unbanned = true;
+      } catch {
+        unbanned = false;
+      }
+
+      if (unbanned) {
+        const log = await registerModerationLog(
+          ModerationLogType.UNBAN,
+          BigInt(interaction.user.id),
+          BigInt(userID),
+          BigInt(guild.id),
+          'Appeal accepted',
+        );
+
+        await sendModerationLog(
+          new EmbedBuilder()
+            .setTitle('🙏 Unban (Appeal)')
+            .setDescription(
+              `**Offender:** ${user.username} <@${user.id}>\n` +
+              '**Reason:** Appeal accepted\n' +
+              `**Moderator:** ${interaction.user.username} <@${interaction.user.id}>`,
+            )
+            .setFooter({ text: `ID: ${user.id} | #${log.id}` })
+            .setTimestamp()
+            .setColor(Colors.GREEN),
+        );
+      }
+
       await user?.send({
         embeds: [
           new EmbedBuilder({

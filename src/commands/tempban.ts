@@ -6,7 +6,8 @@ import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { prismaClient } from '../lib/prisma-client';
 import { Command, CommandContext } from '../structures/command';
-import { canBanUser } from '../utils/moderation';
+import { canBanNonMember, canBanUser } from '../utils/moderation';
+import { markActionInFlight } from '../utils/moderation-action-cache';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 import { DiscordTimestampFormat, formatDiscordTimestamp, parseDuration } from '../utils/time';
 
@@ -22,15 +23,27 @@ export class TemporaryBanCommand extends Command {
     )
     .addStringOption(option =>
       option
-        .setName('reason')
-        .setDescription('Ban reason')
+        .setName('duration')
+        .setDescription('Ban duration')
         .setRequired(true),
     )
     .addStringOption(option =>
       option
-        .setName('duration')
-        .setDescription('Ban duration')
+        .setName('reason')
+        .setDescription('Ban reason')
         .setRequired(true),
+    )
+    .addStringOption(
+      option =>
+        option
+          .setName('delete_messages')
+          .setDescription('Delete messages')
+          .addChoices(
+            { name: '1 day', value: HolyTime.Units.DAY.toString() },
+            { name: '3 days', value: (HolyTime.Units.DAY * 3).toString() },
+            { name: '7 days', value: (HolyTime.Units.DAY * 7).toString() },
+          )
+          .setRequired(false),
     );
 
   public override servers = [ CONFIG.ids.servers.dmc ];
@@ -38,13 +51,10 @@ export class TemporaryBanCommand extends Command {
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
     const duration = interaction.options.getString('duration', true);
+    const deleteMessageSeconds = interaction.options.getString('delete_messages', false);
 
     const offenderMember = interaction.guild.members.resolve(offender.id);
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
-
-    if (!offenderMember) {
-      return 'Could not find this member. They probably left.';
-    }
 
     if (!moderatorMember) {
       return new EmbedBuilder()
@@ -52,7 +62,13 @@ export class TemporaryBanCommand extends Command {
         .setColor(Colors.RED);
     }
 
-    if (!canBanUser(moderatorMember, offenderMember)) {
+    if (offenderMember) {
+      if (!canBanUser(moderatorMember, offenderMember)) {
+        return new EmbedBuilder()
+          .setDescription('You cannot ban this user.')
+          .setColor(Colors.RED);
+      }
+    } else if (!canBanNonMember(moderatorMember)) {
       return new EmbedBuilder()
         .setDescription('You cannot ban this user.')
         .setColor(Colors.RED);
@@ -65,8 +81,10 @@ export class TemporaryBanCommand extends Command {
     }
 
     try {
-      await offenderMember.ban({
+      markActionInFlight(interaction.guildId, offender.id, 'BAN');
+      await interaction.guild.members.ban(offender, {
         reason: `Temporarily Banned by ${interaction.user.username} | ${reason} | ${duration}`,
+        ...(deleteMessageSeconds ? { deleteMessageSeconds: Number.parseInt(deleteMessageSeconds) / HolyTime.Units.SECOND } : {}),
       });
     } catch {
       return new EmbedBuilder()

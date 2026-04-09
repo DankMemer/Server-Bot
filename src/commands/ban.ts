@@ -4,7 +4,8 @@ import HolyTime from 'holy-time';
 import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
-import { canBanUser } from '../utils/moderation';
+import { canBanNonMember, canBanUser } from '../utils/moderation';
+import { markActionInFlight } from '../utils/moderation-action-cache';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 
 export class BanCommand extends Command {
@@ -44,25 +45,26 @@ export class BanCommand extends Command {
     const offenderMember = interaction.guild.members.resolve(offender.id);
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
 
-    if (!offenderMember) {
-      return new EmbedBuilder()
-        .setDescription('Could not find this member. They probably left.')
-        .setColor(Colors.RED);
-    }
-
     if (!moderatorMember) {
       return new EmbedBuilder()
         .setDescription('Could not find your member record.')
         .setColor(Colors.RED);
     }
 
-    if (!canBanUser(moderatorMember, offenderMember)) {
+    if (offenderMember) {
+      if (!canBanUser(moderatorMember, offenderMember)) {
+        return new EmbedBuilder()
+          .setDescription('You cannot ban this user.')
+          .setColor(Colors.RED);
+      }
+    } else if (!canBanNonMember(moderatorMember)) {
       return new EmbedBuilder()
         .setDescription('You cannot ban this user.')
         .setColor(Colors.RED);
     }
 
     try {
+      markActionInFlight(interaction.guildId, offender.id, 'BAN');
       await interaction.guild.members.ban(offender, {
         reason: `Banned by ${interaction.user.username} | ${reason}`,
         ...(deleteMessageSeconds ? { deleteMessageSeconds: Number.parseInt(deleteMessageSeconds) / HolyTime.Units.SECOND } : {}),

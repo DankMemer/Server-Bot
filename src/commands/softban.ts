@@ -4,6 +4,7 @@ import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
 import { canBanUser } from '../utils/moderation';
+import { markActionInFlight } from '../utils/moderation-action-cache';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 
 export class SoftbanCommand extends Command {
@@ -68,11 +69,13 @@ export class SoftbanCommand extends Command {
     }
 
     try {
+      markActionInFlight(interaction.guildId, offender.id, 'BAN');
       await interaction.guild.members.ban(offender, {
         reason: `Softbanned by ${interaction.user.username} | ${reason}`,
         ...(deleteMessageDaysOption ? { deleteMessageDays: days } : {}),
       });
 
+      markActionInFlight(interaction.guildId, offender.id, 'UNBAN');
       await interaction.guild.members.unban(
         offender.id,
         `Softban unban by ${interaction.user.username} | ${reason}`

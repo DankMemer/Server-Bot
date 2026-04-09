@@ -81,6 +81,10 @@ export function canUnban(member: GuildMember): boolean {
   return hasBanPermission(member);
 }
 
+export function canBanNonMember(moderator: GuildMember): boolean {
+  return hasBanPermission(moderator);
+}
+
 export function canUntimeout(member: GuildMember): boolean {
   return hasTimeoutPermission(member);
 }

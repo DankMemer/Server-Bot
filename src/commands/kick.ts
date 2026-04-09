@@ -5,6 +5,7 @@ import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { Command, CommandContext } from '../structures/command';
 import { canKickUser } from '../utils/moderation';
+import { markActionInFlight } from '../utils/moderation-action-cache';
 import { registerModerationLog, sendModerationLog } from '../utils/moderation-log';
 
 export class KickCommand extends Command {
@@ -50,6 +51,7 @@ export class KickCommand extends Command {
     }
 
     try {
+      markActionInFlight(interaction.guildId, offender.id, 'KICK');
       await offenderMember.kick(`Kicked by ${interaction.user.username} | ${reason}`);
     } catch {
       return new EmbedBuilder()

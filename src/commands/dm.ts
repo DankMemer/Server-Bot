@@ -26,11 +26,17 @@ export class DmCommand extends Command {
         .setName('sign')
         .setDescription('Whether to sign the dm')
         .setRequired(true),
+    )
+    .addStringOption(option =>
+      option
+        .setName('reason')
+        .setDescription('Reason for the dm')
+        .setRequired(false),
     );
 
   public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
 
-  public override execute = async ({ interaction }: CommandContext): Promise<string> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
     const staff = interaction.guild.members.resolve(interaction.user.id);
 
     if (!staff || !canDmUser(staff)) {
@@ -40,6 +46,7 @@ export class DmCommand extends Command {
     const target = interaction.options.getUser('user', true);
     const message = interaction.options.getString('message', true);
     const signed = interaction.options.getBoolean('sign', true);
+    const reason = interaction.options.getString('reason', false);
 
     try {
       await target.send({
@@ -63,7 +70,30 @@ export class DmCommand extends Command {
       return 'Failed to send a DM.';
     }
 
-    return 'DM sent.';
+    return new EmbedBuilder()
+      .setAuthor({
+        name: `DM sent to ${target.username}`,
+        iconURL: target.avatarURL() ?? undefined,
+      })
+      .setColor(Colors.GREEN)
+      .setDescription(message)
+      .addFields(
+        {
+          name: 'Recipient',
+          value: `<@${target.id}> (${target.id})`,
+          inline: false,
+        },
+        {
+          name: 'Signed',
+          value: signed ? 'Yes' : 'No',
+          inline: true,
+        },
+        {
+          name: 'Reason',
+          value: reason ?? 'No reason provided',
+          inline: true,
+        },
+      );
   };
 }
 

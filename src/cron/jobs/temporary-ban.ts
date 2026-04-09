@@ -1,6 +1,7 @@
 import { CONFIG } from '../../config';
 import { discordClient } from '../../lib/discord-client';
 import { prismaClient } from '../../lib/prisma-client';
+import { markActionInFlight } from '../../utils/moderation-action-cache';
 import { Job } from '../job';
 
 export class TemporaryBanJob extends Job {
@@ -23,6 +24,7 @@ export class TemporaryBanJob extends Job {
         },
       });
 
+      markActionInFlight(guild.id, temporaryBan.userID.toString(), 'UNBAN');
       await guild.members.unban(temporaryBan.userID.toString(), 'Temporary Ban ended');
     }
   }
