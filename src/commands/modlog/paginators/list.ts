@@ -1,5 +1,6 @@
 import { ModerationLogType } from '@prisma/client';
 import HolyTime from 'holy-time';
+import { CONFIG } from '../../../config';
 import { prismaClient } from '../../../lib/prisma-client';
 import { Widget } from '../../../lib/widgets';
 import { Paginator, PaginatorContext, PaginatorOutput } from '../../../structures/paginator';
@@ -30,6 +31,11 @@ const MODERATION_LOG_MAP: Record<ModerationLogType, string> = {
   [ModerationLogType.UNFREEZE_NICK]: '🌊 Unfreeze Nickname',
 };
 
+const SERVER_LABELS: Record<string, string> = {
+  [CONFIG.ids.servers.dmc]: 'DMC',
+  [CONFIG.ids.servers.dmo]: 'DMO',
+};
+
 export class ModerationLogListPaginator extends Paginator {
   public override id = 'modlog-list';
   public override itemsPerPage = 5;
@@ -50,7 +56,6 @@ export class ModerationLogListPaginator extends Paginator {
     let moderationLogs = await prismaClient.moderationLog.findMany({
       where: {
         offenderID: BigInt(payload),
-        guildID: BigInt(interaction.guildId),
       },
       take: 200,
       orderBy: {
@@ -66,8 +71,10 @@ export class ModerationLogListPaginator extends Paginator {
       delimiter: '\n\n',
       items: moderationLogs.map(log => {
         const hours = log.duration < HolyTime.Units.DAY;
+        const serverLabel = SERVER_LABELS[log.guildID.toString()] ?? `Unknown (${log.guildID})`;
         return `**${MODERATION_LOG_MAP[log.type]}**\n` +
         Widget.replyList([
+          `Server: ${serverLabel}`,
           `ID: #${log.id}`,
           `Date: ${formatDiscordTimestamp(new HolyTime(log.createdAt), DiscordTimestampFormat.SHORT_DATE_TIME)} (${formatDiscordTimestamp(new HolyTime(log.createdAt), DiscordTimestampFormat.RELATIVE_TIME)})`,
           `Moderator: <@${log.moderatorID}>`,

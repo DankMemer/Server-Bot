@@ -137,6 +137,7 @@ export class FreezeNickCommand extends Command {
         .setFooter({ text: `ID: ${targetUser.id} | #${log.id}` })
         .setTimestamp()
         .setColor(Colors.BLUE),
+      interaction.guildId,
     );
 
     await interaction.editReply({

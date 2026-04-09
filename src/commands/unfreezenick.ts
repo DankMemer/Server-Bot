@@ -104,6 +104,7 @@ export class UnfreezeNickCommand extends Command {
         .setFooter({ text: `ID: ${targetUser.id} | #${log.id}` })
         .setTimestamp()
         .setColor(Colors.GREEN),
+      interaction.guildId,
     );
 
     await interaction.editReply({

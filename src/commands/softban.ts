@@ -36,7 +36,7 @@ export class SoftbanCommand extends Command {
           .setRequired(false),
     );
 
-  public override servers = [CONFIG.ids.servers.dmc];
+  public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
 
   public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string | void> => {
     await interaction.deferReply({ ephemeral: true });
@@ -134,6 +134,7 @@ export class SoftbanCommand extends Command {
         .setFooter({ text: `ID: ${offenderMember.id} | #${log.id}` })
         .setTimestamp()
         .setColor(Colors.ORANGE),
+      interaction.guildId,
     );
 
     await interaction.editReply({

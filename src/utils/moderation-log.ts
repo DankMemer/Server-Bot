@@ -5,8 +5,19 @@ import { discordClient } from '../lib/discord-client';
 import { prismaClient } from '../lib/prisma-client';
 import { upsertUsers } from './db';
 
-export async function sendModerationLog(embed: EmbedBuilder): Promise<void> {
-  const moderationLog = discordClient.bot.channels.resolve(CONFIG.ids.channels.dmc.modLogs);
+const MOD_LOG_CHANNEL_BY_GUILD: Record<string, string> = {
+  [CONFIG.ids.servers.dmc]: CONFIG.ids.channels.dmc.modLogs,
+  [CONFIG.ids.servers.dmo]: CONFIG.ids.channels.dmo.modLogs,
+};
+
+export async function sendModerationLog(embed: EmbedBuilder, guildID: string): Promise<void> {
+  const channelID = MOD_LOG_CHANNEL_BY_GUILD[guildID];
+
+  if (!channelID) {
+    return;
+  }
+
+  const moderationLog = discordClient.bot.channels.resolve(channelID);
 
   if (moderationLog?.isTextBased()) {
     await moderationLog.send({ embeds: [ embed ] });

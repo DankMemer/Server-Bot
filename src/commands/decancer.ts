@@ -110,6 +110,7 @@ export class DecancerCommand extends Command {
         .setFooter({ text: `ID: ${targetUser.id} | #${log.id}` })
         .setTimestamp()
         .setColor(Colors.BLUE),
+      interaction.guildId,
     );
 
     return new EmbedBuilder()

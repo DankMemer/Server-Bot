@@ -31,7 +31,7 @@ export class SupportCommand extends Command {
         .setDescription('Timeout reason')
         .setRequired(true),
     );
-  public override servers = [ CONFIG.ids.servers.dmc ];
+  public override servers = [ CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo ];
   public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string | void> => {
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
@@ -118,6 +118,7 @@ export class SupportCommand extends Command {
         .setFooter({ text: `ID: ${offender.id} | #${log.id}` })
         .setTimestamp()
         .setColor(Colors.BLUE),
+      interaction.guildId,
     );
 
     await interaction.reply({

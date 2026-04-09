@@ -49,6 +49,7 @@ export class HelpDeskAppealUpdateModal extends Modal {
             .setFooter({ text: `ID: ${user.id} | #${log.id}` })
             .setTimestamp()
             .setColor(Colors.GREEN),
+          guild.id,
         );
       }
 

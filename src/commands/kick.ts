@@ -24,7 +24,7 @@ export class KickCommand extends Command {
         .setDescription('Kick reason')
         .setRequired(true),
     );
-  public override servers = [CONFIG.ids.servers.dmc];
+  public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
   public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | void> => {
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
@@ -98,6 +98,7 @@ export class KickCommand extends Command {
         .setFooter({ text: `ID: ${offender.id} | #${log.id}` })
         .setTimestamp()
         .setColor(Colors.ORANGE),
+      interaction.guildId,
     );
 
     await interaction.reply({

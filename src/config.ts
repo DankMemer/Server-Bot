@@ -47,6 +47,9 @@ export const CONFIG = {
         chadCategory: variable('IDS_CHANNELS_DMC_CHAD_CATEGORY', 'string'),
         heistRequests: variable('IDS_CHANNELS_DMC_HEIST_REQUESTS', 'string'),
       },
+      dmo: {
+        modLogs: variable('IDS_CHANNELS_DMO_MOD_LOGS', 'string'),
+      },
     },
     roles: {
       dmo: {

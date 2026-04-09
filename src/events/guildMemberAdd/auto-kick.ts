@@ -1,7 +1,6 @@
 import { ModerationLogType } from '@prisma/client';
 import { EmbedBuilder, GuildMember } from 'discord.js';
 import HolyTime from 'holy-time';
-import { CONFIG } from '../../config';
 import { Colors } from '../../constants/colors';
 import { discordClient } from '../../lib/discord-client';
 import { logger } from '../../lib/logger';
@@ -61,10 +60,6 @@ async function logAutoKick(member: GuildMember, reason: string): Promise<void> {
     reason,
   );
 
-  if (member.guild.id !== CONFIG.ids.servers.dmc) {
-    return;
-  }
-
   await sendModerationLog(
     new EmbedBuilder()
       .setTitle('👞 Kick')
@@ -76,5 +71,6 @@ async function logAutoKick(member: GuildMember, reason: string): Promise<void> {
       .setFooter({ text: `ID: ${member.id} | #${log.id}` })
       .setTimestamp()
       .setColor(Colors.ORANGE),
+    member.guild.id,
   );
 }

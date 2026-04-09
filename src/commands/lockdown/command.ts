@@ -61,7 +61,7 @@ export class LockdownCommand extends Command {
         .setDescription('Remove invalid channel entries from lockdown system'),
     );
 
-  public override servers = [CONFIG.ids.servers.dmc];
+  public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
 
   public override execute = async ({ interaction, userEntry }: CommandContext): Promise<void | string | EmbedBuilder> => {
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);

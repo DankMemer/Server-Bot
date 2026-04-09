@@ -1,14 +1,16 @@
-import { FrozenNickname, ModerationLogType } from '@prisma/client';
+import { FrozenNickname } from '@prisma/client';
 import { EmbedBuilder, GuildMember } from 'discord.js';
 import { CONFIG } from '../../config';
 import { Colors } from '../../constants/colors';
-import { discordClient } from '../../lib/discord-client';
 import { logger } from '../../lib/logger';
 import { prismaClient } from '../../lib/prisma-client';
 import { isUserOnDmCooldown, setUserDmCooldown } from '../../utils/dm-cooldown';
-import { registerModerationLog, sendModerationLog } from '../../utils/moderation-log';
 
 export async function enforceFrozenNickname(member: GuildMember): Promise<void> {
+  if (member.guild.id !== CONFIG.ids.servers.dmc) {
+    return;
+  }
+
   if (!isMemberStillInGuild(member)) {
     return;
   }

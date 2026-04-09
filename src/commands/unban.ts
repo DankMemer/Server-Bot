@@ -25,7 +25,7 @@ export class UnbanCommand extends Command {
         .setRequired(true),
     );
 
-  public override servers = [CONFIG.ids.servers.dmc];
+  public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
 
   public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder> => {
     const moderator = interaction.guild.members.resolve(interaction.user.id);
@@ -87,6 +87,7 @@ export class UnbanCommand extends Command {
         .setFooter({ text: `ID: ${user.id} | #${log.id}` })
         .setTimestamp()
         .setColor(Colors.GREEN),
+      interaction.guildId,
     );
 
     return new EmbedBuilder()

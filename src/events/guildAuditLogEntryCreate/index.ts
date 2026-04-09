@@ -1,6 +1,5 @@
 import { ModerationLogType } from '@prisma/client';
 import { AuditLogEvent, EmbedBuilder, Guild, GuildAuditLogsEntry, User } from 'discord.js';
-import { CONFIG } from '../../config';
 import { Colors } from '../../constants/colors';
 import { discordClient } from '../../lib/discord-client';
 import { ModerationActionType, consumeActionInFlight } from '../../utils/moderation-action-cache';
@@ -70,10 +69,6 @@ export default async function guildAuditLogEntryCreate(entry: GuildAuditLogsEntr
     reason,
   );
 
-  if (guild.id !== CONFIG.ids.servers.dmc) {
-    return;
-  }
-
   const moderator = entry.executor ?? (entry.executorId
     ? await discordClient.bot.users.fetch(entry.executorId).catch(() => null)
     : null);
@@ -95,5 +90,6 @@ export default async function guildAuditLogEntryCreate(entry: GuildAuditLogsEntr
       .setFooter({ text: `ID: ${targetId} | #${log.id}` })
       .setTimestamp()
       .setColor(config.color),
+    guild.id,
   );
 }

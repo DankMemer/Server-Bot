@@ -36,7 +36,7 @@ export class BanCommand extends Command {
           )
           .setRequired(false),
     );
-  public override servers = [CONFIG.ids.servers.dmc];
+  public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
   public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | void> => {
     const offender = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason', true);
@@ -122,6 +122,7 @@ export class BanCommand extends Command {
         .setFooter({ text: `ID: ${offender.id} | #${log.id}` })
         .setTimestamp()
         .setColor(Colors.RED),
+      interaction.guildId,
     );
 
     await interaction.reply({

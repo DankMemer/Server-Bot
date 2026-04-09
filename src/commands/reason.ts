@@ -23,7 +23,7 @@ export class ReasonCommand extends Command {
         .setRequired(true),
     );
 
-  public override servers = [CONFIG.ids.servers.dmc];
+  public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
 
   public override execute = async ({ interaction }: CommandContext): Promise<string | void> => {
     const moderator = interaction.guild.members.resolve(interaction.user.id);
@@ -65,6 +65,7 @@ export class ReasonCommand extends Command {
         .setFooter({ text: `#${oldLog.id}` })
         .setTimestamp()
         .setColor(Colors.WHITE),
+      interaction.guildId,
     );
 
     await interaction.reply({

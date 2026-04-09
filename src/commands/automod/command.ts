@@ -42,7 +42,7 @@ export class AutomodCommand extends Command {
         )
     );
 
-  public override servers = [CONFIG.ids.servers.dmc];
+  public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
 
   public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | void> => {
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);

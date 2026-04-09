@@ -14,7 +14,7 @@ export class ModerationLogCommand extends Command {
         .setDescription('User to check')
         .setRequired(true),
     );
-  public override servers = [ CONFIG.ids.servers.dmc ];
+  public override servers = [ CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo ];
 
   public static paginator = new ModerationLogListPaginator();
 

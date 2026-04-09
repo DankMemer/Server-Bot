@@ -85,6 +85,13 @@ export function canBanNonMember(moderator: GuildMember): boolean {
   return hasBanPermission(moderator);
 }
 
+export function canSyncBan(member: GuildMember): boolean {
+  return (
+    member.roles.cache.has(CONFIG.ids.roles.dmc.serverManager) ||
+    member.roles.cache.has(CONFIG.ids.roles.dmo.serverManager)
+  );
+}
+
 export function canUntimeout(member: GuildMember): boolean {
   return hasTimeoutPermission(member);
 }
