@@ -63,11 +63,37 @@ export class BanCommand extends Command {
         .setColor(Colors.RED);
     }
 
+    if (offenderMember) {
+      await offender
+        .send({
+          embeds: [
+            new EmbedBuilder()
+              .addFields(
+                {
+                  name: 'Reason',
+                  value: reason,
+                  inline: false,
+                },
+              )
+              .setAuthor({
+                name: `You've been banned in ${interaction.guild.name}`,
+                iconURL: interaction.guild.iconURL(),
+              })
+              .setColor(Colors.INVISIBLE),
+          ],
+        })
+        .catch(() => null);
+    }
+
+    const deleteMessageSecondsValue = deleteMessageSeconds
+      ? Number.parseInt(deleteMessageSeconds) / HolyTime.Units.SECOND
+      : null;
+
     try {
       markActionInFlight(interaction.guildId, offender.id, 'BAN');
       await interaction.guild.members.ban(offender, {
         reason: `Banned by ${interaction.user.username} | ${reason}`,
-        ...(deleteMessageSeconds ? { deleteMessageSeconds: Number.parseInt(deleteMessageSeconds) / HolyTime.Units.SECOND } : {}),
+        ...(deleteMessageSecondsValue ? { deleteMessageSeconds: deleteMessageSecondsValue } : {}),
       });
     } catch {
       return new EmbedBuilder()
@@ -75,32 +101,14 @@ export class BanCommand extends Command {
         .setColor(Colors.RED);
     }
 
-    await offender
-      .send({
-        embeds: [
-          new EmbedBuilder()
-            .addFields(
-              {
-                name: 'Reason',
-                value: reason,
-                inline: false,
-              },
-            )
-            .setAuthor({
-              name: `You've been banned in ${interaction.guild.name}`,
-              iconURL: interaction.guild.iconURL(),
-            })
-            .setColor(Colors.INVISIBLE),
-        ],
-      })
-      .catch(() => null);
-
     const log = await registerModerationLog(
       ModerationLogType.BAN,
       BigInt(interaction.user.id),
       BigInt(offender.id),
       BigInt(interaction.guildId),
       reason,
+      undefined,
+      deleteMessageSecondsValue ?? undefined,
     );
 
     await sendModerationLog(

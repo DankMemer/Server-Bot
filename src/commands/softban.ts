@@ -68,24 +68,6 @@ export class SoftbanCommand extends Command {
         .setColor(Colors.RED);
     }
 
-    try {
-      markActionInFlight(interaction.guildId, offender.id, 'BAN');
-      await interaction.guild.members.ban(offender, {
-        reason: `Softbanned by ${interaction.user.username} | ${reason}`,
-        ...(deleteMessageDaysOption ? { deleteMessageDays: days } : {}),
-      });
-
-      markActionInFlight(interaction.guildId, offender.id, 'UNBAN');
-      await interaction.guild.members.unban(
-        offender.id,
-        `Softban unban by ${interaction.user.username} | ${reason}`
-      );
-    } catch (error) {
-      return new EmbedBuilder()
-        .setDescription('Could not softban this member. Make sure I have the necessary permissions.')
-        .setColor(Colors.RED);
-    }
-
     await offender
       .send({
         embeds: [
@@ -112,12 +94,32 @@ export class SoftbanCommand extends Command {
       })
       .catch(() => null);
 
+    try {
+      markActionInFlight(interaction.guildId, offender.id, 'BAN');
+      await interaction.guild.members.ban(offender, {
+        reason: `Softbanned by ${interaction.user.username} | ${reason}`,
+        ...(deleteMessageDaysOption ? { deleteMessageDays: days } : {}),
+      });
+
+      markActionInFlight(interaction.guildId, offender.id, 'UNBAN');
+      await interaction.guild.members.unban(
+        offender.id,
+        `Softban unban by ${interaction.user.username} | ${reason}`
+      );
+    } catch (error) {
+      return new EmbedBuilder()
+        .setDescription('Could not softban this member. Make sure I have the necessary permissions.')
+        .setColor(Colors.RED);
+    }
+
     const log = await registerModerationLog(
       ModerationLogType.SOFT_BAN,
       BigInt(interaction.user.id),
       BigInt(offenderMember.id),
       BigInt(interaction.guildId),
       reason,
+      undefined,
+      deleteMessageDaysOption ? days * 86400 : undefined,
     );
 
     await sendModerationLog(

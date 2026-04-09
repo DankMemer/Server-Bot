@@ -84,6 +84,9 @@ export class HelpDeskAppealUpdateModal extends Modal {
             name: `${user.username}'s (${user.id}) appeal was ${accepted ? 'accepted' : 'denied'}`,
             iconURL: user?.avatarURL() ?? '',
           },
+          description: message
+            ? `**${accepted ? 'Approval' : 'Denial'} reason:**\n${message}`
+            : undefined,
           footer: {
             text: `by ${interaction.user.username} (${interaction.user.id})`,
             iconURL: interaction.user.avatarURL(),

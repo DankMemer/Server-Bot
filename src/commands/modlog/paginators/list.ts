@@ -5,6 +5,18 @@ import { Widget } from '../../../lib/widgets';
 import { Paginator, PaginatorContext, PaginatorOutput } from '../../../structures/paginator';
 import { DiscordTimestampFormat, formatDiscordTimestamp } from '../../../utils/time';
 
+function formatDeleteMessageSeconds(seconds: number): string {
+  if (seconds % 86400 === 0) {
+    const days = seconds / 86400;
+    return `${days} ${days === 1 ? 'day' : 'days'}`;
+  }
+  if (seconds % 3600 === 0) {
+    const hours = seconds / 3600;
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+  }
+  return `${seconds} seconds`;
+}
+
 const MODERATION_LOG_MAP: Record<ModerationLogType, string> = {
   [ModerationLogType.BAN]: '🔨 Ban',
   [ModerationLogType.KICK]: '👞 Kick',
@@ -62,6 +74,9 @@ export class ModerationLogListPaginator extends Paginator {
           `Reason: ${log.reason}`,
           log.duration
             ? `Duration: ${HolyTime.duration(Number(log.duration)).in(hours ? 'hours' : 'days').toLocaleString()}${hours ? 'h' : 'd'}`
+            : null,
+          log.deleteMessageSeconds
+            ? `Messages deleted: ${formatDeleteMessageSeconds(log.deleteMessageSeconds)}`
             : null,
         ]);
       }),

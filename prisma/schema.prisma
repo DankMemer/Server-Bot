@@ -51,6 +51,7 @@ model ModerationLog {
   type     ModerationLogType
   reason   String
   duration BigInt?
+  deleteMessageSeconds Int?
   guildID  BigInt
 
   createdAt DateTime @default(now())

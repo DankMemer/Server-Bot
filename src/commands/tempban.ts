@@ -80,46 +80,52 @@ export class TemporaryBanCommand extends Command {
       return 'You need to input a valid duration.';
     }
 
+    const expires = HolyTime.in(milliseconds);
+
+    if (offenderMember) {
+      await offender
+        .send({
+          embeds: [
+            new EmbedBuilder()
+              .addFields(
+                {
+                  name: 'Reason',
+                  value: reason,
+                  inline: false,
+                },
+              )
+              .addFields(
+                {
+                  name: 'Expires',
+                  value: `${formatDiscordTimestamp(expires, DiscordTimestampFormat.SHORT_DATE_TIME)} (${formatDiscordTimestamp(expires, DiscordTimestampFormat.RELATIVE_TIME)})`,
+                  inline: false,
+                },
+              )
+              .setAuthor({
+                name: `You've been temporarily banned in ${interaction.guild.name}`,
+                iconURL: interaction.guild.iconURL(),
+              })
+              .setColor(Colors.INVISIBLE),
+          ],
+        })
+        .catch(() => null);
+    }
+
+    const deleteMessageSecondsValue = deleteMessageSeconds
+      ? Number.parseInt(deleteMessageSeconds) / HolyTime.Units.SECOND
+      : null;
+
     try {
       markActionInFlight(interaction.guildId, offender.id, 'BAN');
       await interaction.guild.members.ban(offender, {
         reason: `Temporarily Banned by ${interaction.user.username} | ${reason} | ${duration}`,
-        ...(deleteMessageSeconds ? { deleteMessageSeconds: Number.parseInt(deleteMessageSeconds) / HolyTime.Units.SECOND } : {}),
+        ...(deleteMessageSecondsValue ? { deleteMessageSeconds: deleteMessageSecondsValue } : {}),
       });
     } catch {
       return new EmbedBuilder()
         .setDescription('Could not tempban this member.')
         .setColor(Colors.RED);
     }
-
-    const expires = HolyTime.in(milliseconds);
-
-    await offender
-      .send({
-        embeds: [
-          new EmbedBuilder()
-            .addFields(
-              {
-                name: 'Reason',
-                value: reason,
-                inline: false,
-              },
-            )
-            .addFields(
-              {
-                name: 'Expires',
-                value: `${formatDiscordTimestamp(expires, DiscordTimestampFormat.SHORT_DATE_TIME)} (${formatDiscordTimestamp(expires, DiscordTimestampFormat.RELATIVE_TIME)})`,
-                inline: false,
-              },
-            )
-            .setAuthor({
-              name: `You've been temporarily banned in ${interaction.guild.name}`,
-              iconURL: interaction.guild.iconURL(),
-            })
-            .setColor(Colors.INVISIBLE),
-        ],
-      })
-      .catch(() => null);
 
     const log = await registerModerationLog(
       ModerationLogType.TEMP_BAN,
@@ -128,6 +134,7 @@ export class TemporaryBanCommand extends Command {
       BigInt(interaction.guildId),
       reason,
       milliseconds,
+      deleteMessageSecondsValue ?? undefined,
     );
 
     await prismaClient.tempBan.create({

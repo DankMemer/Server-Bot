@@ -20,6 +20,7 @@ export async function registerModerationLog(
   guildID: bigint,
   reason: string,
   duration?: bigint | number,
+  deleteMessageSeconds?: number,
 ): Promise<ModerationLog> {
   await upsertUsers([ moderatorID, offenderID ]);
   return await prismaClient.moderationLog.create({
@@ -30,6 +31,7 @@ export async function registerModerationLog(
       type,
       reason,
       duration,
+      deleteMessageSeconds,
     },
   });
 }

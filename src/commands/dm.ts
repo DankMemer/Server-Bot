@@ -36,7 +36,7 @@ export class DmCommand extends Command {
 
   public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
 
-  public override execute = async ({ interaction }: CommandContext): Promise<EmbedBuilder | string> => {
+  public override execute = async ({ interaction }: CommandContext): Promise<string | void> => {
     const staff = interaction.guild.members.resolve(interaction.user.id);
 
     if (!staff || !canDmUser(staff)) {
@@ -70,30 +70,45 @@ export class DmCommand extends Command {
       return 'Failed to send a DM.';
     }
 
-    return new EmbedBuilder()
+    const quotedMessage = message
+      .split('\n')
+      .map(line => `> ${line}`)
+      .join('\n');
+
+    const embed = new EmbedBuilder()
       .setAuthor({
         name: `DM sent to ${target.username}`,
         iconURL: target.avatarURL() ?? undefined,
       })
       .setColor(Colors.GREEN)
-      .setDescription(message)
+      .setDescription(quotedMessage)
       .addFields(
+        {
+          name: 'Sender',
+          value: `<@${interaction.user.id}> (${interaction.user.id})`,
+          inline: false,
+        },
         {
           name: 'Recipient',
           value: `<@${target.id}> (${target.id})`,
           inline: false,
         },
         {
-          name: 'Signed',
-          value: signed ? 'Yes' : 'No',
-          inline: true,
-        },
-        {
           name: 'Reason',
           value: reason ?? 'No reason provided',
-          inline: true,
+          inline: false,
         },
-      );
+      )
+      .setFooter({
+        text: signed ? 'Signed' : 'Unsigned',
+      })
+      .setTimestamp();
+
+    await interaction.reply({
+      content: target.id,
+      embeds: [ embed ],
+      allowedMentions: { parse: [] },
+    });
   };
 }
 

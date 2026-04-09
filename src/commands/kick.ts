@@ -50,15 +50,6 @@ export class KickCommand extends Command {
         .setColor(Colors.RED);
     }
 
-    try {
-      markActionInFlight(interaction.guildId, offender.id, 'KICK');
-      await offenderMember.kick(`Kicked by ${interaction.user.username} | ${reason}`);
-    } catch {
-      return new EmbedBuilder()
-        .setDescription('Could not kick this member.')
-        .setColor(Colors.RED);
-    }
-
     await offender
       .send({
         embeds: [
@@ -78,6 +69,15 @@ export class KickCommand extends Command {
         ],
       })
       .catch(() => null);
+
+    try {
+      markActionInFlight(interaction.guildId, offender.id, 'KICK');
+      await offenderMember.kick(`Kicked by ${interaction.user.username} | ${reason}`);
+    } catch {
+      return new EmbedBuilder()
+        .setDescription('Could not kick this member.')
+        .setColor(Colors.RED);
+    }
 
     const log = await registerModerationLog(
       ModerationLogType.KICK,
