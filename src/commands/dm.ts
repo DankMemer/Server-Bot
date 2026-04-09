@@ -70,9 +70,9 @@ export class DmCommand extends Command {
       return 'Failed to send a DM.';
     }
 
-    const quotedMessage = message
+    const subtextMessage = message
       .split('\n')
-      .map(line => `> ${line}`)
+      .map(line => `-# ${line}`)
       .join('\n');
 
     const embed = new EmbedBuilder()
@@ -80,19 +80,9 @@ export class DmCommand extends Command {
         name: `DM sent to ${target.username}`,
         iconURL: target.avatarURL() ?? undefined,
       })
-      .setColor(Colors.GREEN)
-      .setDescription(quotedMessage)
+      .setColor(Colors.INVISIBLE)
+      .setDescription(subtextMessage)
       .addFields(
-        {
-          name: 'Sender',
-          value: `<@${interaction.user.id}> (${interaction.user.id})`,
-          inline: false,
-        },
-        {
-          name: 'Recipient',
-          value: `<@${target.id}> (${target.id})`,
-          inline: false,
-        },
         {
           name: 'Reason',
           value: reason ?? 'No reason provided',
