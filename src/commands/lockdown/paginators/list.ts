@@ -1,6 +1,7 @@
 import { LockdownChannel } from '@prisma/client';
 import { ChannelType, Guild } from 'discord.js';
 import { prismaClient } from '../../../lib/prisma-client';
+import { Widget } from '../../../lib/widgets';
 import { Paginator, PaginatorContext, PaginatorOutput } from '../../../structures/paginator';
 import { tokenLabel } from '../perms';
 
@@ -69,10 +70,7 @@ export class LockdownListPaginator extends Paginator {
       if (specialRules.length === 0) {
         items.push(header);
       } else {
-        items.push(
-          `${header}\n` +
-          specialRules.map(rule => `  • ${describeRule(rule)}`).join('\n'),
-        );
+        items.push(`${header}\n${Widget.replyList(specialRules.map(describeRule))}`);
       }
     }
 
