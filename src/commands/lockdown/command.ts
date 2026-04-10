@@ -5,17 +5,13 @@ import { Colors } from '../../constants/colors';
 import { prismaClient } from '../../lib/prisma-client';
 import { Command, CommandContext } from '../../structures/command';
 import { canManageLockdown } from '../../utils/moderation';
+import { LockdownListPaginator } from './paginators/list';
 import { groupRulesByRole, isVoiceChannel, lockRuleGroup, PERMISSION_CHOICES, tokenLabel, unlockRuleGroup } from './perms';
 
 function normalizeRoleID(roleId: string | null, guildId: string): bigint | null {
   if (!roleId) return null;
   if (roleId === guildId) return null;
   return BigInt(roleId);
-}
-
-function describeRule(rule: LockdownChannel): string {
-  const role = rule.roleID ? `<@&${rule.roleID}>` : '@everyone';
-  return `${role} — ${tokenLabel(rule.permission)}${rule.locked ? ' [locked]' : ''}`;
 }
 
 export class LockdownCommand extends Command {
@@ -101,6 +97,8 @@ export class LockdownCommand extends Command {
     );
 
   public override servers = [CONFIG.ids.servers.dmc, CONFIG.ids.servers.dmo];
+
+  public static listPaginator = new LockdownListPaginator();
 
   public override execute = async ({ interaction, userEntry }: CommandContext): Promise<void | string | EmbedBuilder> => {
     const moderatorMember = interaction.guild.members.resolve(interaction.user.id);
@@ -211,45 +209,18 @@ export class LockdownCommand extends Command {
       }
 
       case 'list': {
-        const rules = await prismaClient.lockdownChannel.findMany({
+        const ruleCount = await prismaClient.lockdownChannel.count({
           where: {
             guildID: BigInt(interaction.guild.id),
           },
-          orderBy: { createdAt: 'asc' },
         });
 
-        if (rules.length === 0) {
+        if (ruleCount === 0) {
           return 'There are no channels in the lockdown system!';
         }
 
-        const byChannel = new Map<string, LockdownChannel[]>();
-        for (const rule of rules) {
-          const key = rule.channelID.toString();
-          const arr = byChannel.get(key);
-          if (arr) {
-            arr.push(rule);
-          } else {
-            byChannel.set(key, [rule]);
-          }
-        }
-
-        const lines: string[] = [];
-        for (const [channelID, channelRules] of byChannel) {
-          lines.push(`<#${channelID}>`);
-          for (const rule of channelRules) {
-            lines.push(`  • ${describeRule(rule)}`);
-          }
-        }
-
-        return void interaction.reply({
-          embeds: [
-            new EmbedBuilder({
-              title: 'Lockdown Channels',
-              description: lines.join('\n'),
-              color: Colors.INVISIBLE,
-            }),
-          ],
-        });
+        await LockdownCommand.listPaginator.start(interaction, interaction.guild.id);
+        return;
       }
 
       case 'channel': {
