@@ -3,7 +3,15 @@ import { SlashCommandBuilder } from 'discord.js';
 import { CONFIG } from '../config';
 import { prismaClient } from '../lib/prisma-client';
 import { Command, CommandContext } from '../structures/command';
-import { canModlog } from '../utils/moderation';
+
+const WHITELISTED_ROLES = [
+  CONFIG.ids.roles.dmc.trialModerator,
+  CONFIG.ids.roles.dmc.giveawayManager,
+  CONFIG.ids.roles.dmc.moderator,
+  CONFIG.ids.roles.dmo.moderator,
+  CONFIG.ids.roles.dmc.serverManager,
+  CONFIG.ids.roles.dmo.serverManager,
+];
 
 function parseUserIds(input: string): string[] {
   return input
@@ -28,7 +36,7 @@ export class MentionCommand extends Command {
   public override execute = async ({ interaction }: CommandContext): Promise<void> => {
     const moderator = interaction.guild.members.resolve(interaction.user.id);
 
-    if (!moderator || !canModlog(moderator)) {
+    if (!moderator || !moderator.roles.cache.hasAny(...WHITELISTED_ROLES)) {
       await interaction.reply({
         content: 'You do not have permission to use this command.',
         ephemeral: true,
@@ -47,7 +55,7 @@ export class MentionCommand extends Command {
       return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply();
 
     const modlogs = await prismaClient.moderationLog.findMany({
       where: {

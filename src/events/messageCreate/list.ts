@@ -7,6 +7,8 @@ const WHITELISTED_ROLES = [
   CONFIG.ids.roles.dmc.giveawayManager,
   CONFIG.ids.roles.dmc.moderator,
   CONFIG.ids.roles.dmo.moderator,
+  CONFIG.ids.roles.dmc.serverManager,
+  CONFIG.ids.roles.dmo.serverManager,
 ];
 const DISCORD_ID_REGEX = /\d{17,19}/g;
 
@@ -41,7 +43,7 @@ export async function listHandler(message: Message): Promise<void> {
     const idsWithModlogs = new Set(modlogs.map(log => log.offenderID.toString()));
 
     await message.channel.send(
-      ids.map(id => `<@${id}>${idsWithModlogs.has(id) ? ' 💬' : ''}`).join(' '),
+      ids.map(id => `• <@${id}>${idsWithModlogs.has(id) ? ' 💬' : ''}`).join('\n'),
     );
   }
 }
