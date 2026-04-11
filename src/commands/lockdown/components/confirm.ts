@@ -1,11 +1,38 @@
 import { LockdownChannel } from '@prisma/client';
-import { EmbedBuilder, GuildChannel } from 'discord.js';
+import { EmbedBuilder, Guild, GuildChannel } from 'discord.js';
 import { Colors } from '../../../constants/colors';
 import { prismaClient } from '../../../lib/prisma-client';
 import { Component, ComponentContext } from '../../../structures/component';
 import { ephemeralResponse } from '../../../utils/format';
 import { canManageLockdown } from '../../../utils/moderation';
 import { groupRulesByRole, lockRuleGroup, unlockRuleGroup } from '../perms';
+
+interface DiscordOnboarding {
+  guild_id: string;
+  prompts: unknown[];
+  default_channel_ids: string[];
+  enabled: boolean;
+  mode: number;
+}
+
+async function fetchOnboarding(guild: Guild): Promise<DiscordOnboarding | null> {
+  try {
+    return await guild.client.rest.get(`/guilds/${guild.id}/onboarding`) as DiscordOnboarding;
+  } catch {
+    return null;
+  }
+}
+
+async function setOnboardingEnabled(guild: Guild, onboarding: DiscordOnboarding, enabled: boolean): Promise<void> {
+  await guild.client.rest.put(`/guilds/${guild.id}/onboarding`, {
+    body: {
+      prompts: onboarding.prompts,
+      default_channel_ids: onboarding.default_channel_ids,
+      enabled,
+      mode: onboarding.mode,
+    },
+  });
+}
 
 export class LockdownConfirmComponent extends Component {
   public override id = 'lockdown-confirm';
@@ -39,6 +66,20 @@ export class LockdownConfirmComponent extends Component {
 
     const lockdown = rules.some(rule => rule.locked);
     const reason = `/lockdown server by @${interaction.user.username} (${interaction.user.id})`;
+    const guildID = BigInt(interaction.guild.id);
+
+    // Toggle onboarding off when locking, restore when unlocking.
+    if (!lockdown) {
+      const onboarding = await fetchOnboarding(interaction.guild);
+      if (onboarding?.enabled) {
+        await setOnboardingEnabled(interaction.guild, onboarding, false);
+        await prismaClient.lockdownGuildSnapshot.upsert({
+          where: { guildID },
+          create: { guildID, onboardingWasEnabled: true },
+          update: { onboardingWasEnabled: true },
+        });
+      }
+    }
 
     // Group rules by channel, then by role within each channel.
     const byChannel = new Map<string, LockdownChannel[]>();
@@ -70,6 +111,22 @@ export class LockdownConfirmComponent extends Component {
         } else {
           await lockRuleGroup(discordChannel, groupRules, reason);
         }
+      }
+    }
+
+    // Restore onboarding after unlocking if it was enabled before lockdown.
+    if (lockdown) {
+      const snapshot = await prismaClient.lockdownGuildSnapshot.findUnique({
+        where: { guildID },
+      });
+      if (snapshot?.onboardingWasEnabled) {
+        const onboarding = await fetchOnboarding(interaction.guild);
+        if (onboarding) {
+          await setOnboardingEnabled(interaction.guild, onboarding, true);
+        }
+        await prismaClient.lockdownGuildSnapshot.delete({
+          where: { guildID },
+        });
       }
     }
 

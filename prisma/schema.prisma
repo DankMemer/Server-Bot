@@ -169,6 +169,15 @@ model FrozenNickname {
   updatedAt DateTime @updatedAt
 }
 
+model LockdownGuildSnapshot {
+  guildID BigInt @id
+
+  onboardingWasEnabled Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model MediaChannel {
   id BigInt @id
 
