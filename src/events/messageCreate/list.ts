@@ -26,15 +26,16 @@ export async function listHandler(message: Message): Promise<void> {
 
     const ids = message.content.split(prefix)[1]?.match(DISCORD_ID_REGEX);
 
-    if (ids && ids.length === 0) {
+    if (!ids || ids.length === 0) {
       continue;
     }
 
-    const modlogs = await prismaClient.moderationLog.groupBy({
-      by: ['offenderID'],
+    const modlogs = await prismaClient.moderationLog.findMany({
       where: {
         offenderID: { in: ids.map(id => BigInt(id)) },
       },
+      distinct: ['offenderID'],
+      select: { offenderID: true },
     });
 
     const idsWithModlogs = new Set(modlogs.map(log => log.offenderID.toString()));

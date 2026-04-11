@@ -49,11 +49,12 @@ export class MentionCommand extends Command {
 
     await interaction.deferReply({ ephemeral: true });
 
-    const modlogs = await prismaClient.moderationLog.groupBy({
-      by: ['offenderID'],
+    const modlogs = await prismaClient.moderationLog.findMany({
       where: {
         offenderID: { in: userIds.map(id => BigInt(id)) },
       },
+      distinct: ['offenderID'],
+      select: { offenderID: true },
     });
 
     const idsWithModlogs = new Set(modlogs.map(log => log.offenderID.toString()));
