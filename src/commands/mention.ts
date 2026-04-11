@@ -57,15 +57,17 @@ export class MentionCommand extends Command {
 
     await interaction.deferReply();
 
-    const modlogs = await prismaClient.moderationLog.findMany({
-      where: {
-        offenderID: { in: userIds.map(id => BigInt(id)) },
-      },
-      distinct: ['offenderID'],
-      select: { offenderID: true },
-    });
+    const checks = await Promise.all(
+      userIds.map(async id => {
+        const exists = await prismaClient.moderationLog.findFirst({
+          where: { offenderID: BigInt(id) },
+          select: { id: true },
+        });
+        return exists ? id : null;
+      }),
+    );
 
-    const idsWithModlogs = new Set(modlogs.map(log => log.offenderID.toString()));
+    const idsWithModlogs = new Set(checks.filter(Boolean));
 
     const lines = userIds.map(id => {
       const hasModlogs = idsWithModlogs.has(id);

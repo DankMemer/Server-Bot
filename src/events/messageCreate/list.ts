@@ -32,15 +32,17 @@ export async function listHandler(message: Message): Promise<void> {
       continue;
     }
 
-    const modlogs = await prismaClient.moderationLog.findMany({
-      where: {
-        offenderID: { in: ids.map(id => BigInt(id)) },
-      },
-      distinct: ['offenderID'],
-      select: { offenderID: true },
-    });
+    const checks = await Promise.all(
+      ids.map(async id => {
+        const exists = await prismaClient.moderationLog.findFirst({
+          where: { offenderID: BigInt(id) },
+          select: { id: true },
+        });
+        return exists ? id : null;
+      }),
+    );
 
-    const idsWithModlogs = new Set(modlogs.map(log => log.offenderID.toString()));
+    const idsWithModlogs = new Set(checks.filter(Boolean));
 
     await message.channel.send(
       ids.map(id => `• <@${id}>${idsWithModlogs.has(id) ? ' 💬' : ''}`).join('\n'),
