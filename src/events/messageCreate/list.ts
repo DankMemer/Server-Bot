@@ -1,5 +1,6 @@
 import { ChannelType, Message } from 'discord.js';
 import { CONFIG } from '../../config';
+import { prismaClient } from '../../lib/prisma-client';
 
 const WHITELISTED_ROLES = [
   CONFIG.ids.roles.dmc.trialModerator,
@@ -23,12 +24,23 @@ export async function listHandler(message: Message): Promise<void> {
       continue;
     }
 
-    const roleIDs = message.content.split(prefix)[1]?.match(DISCORD_ID_REGEX);
+    const ids = message.content.split(prefix)[1]?.match(DISCORD_ID_REGEX);
 
-    if (roleIDs && roleIDs.length === 0) {
+    if (ids && ids.length === 0) {
       continue;
     }
 
-    await message.channel.send(roleIDs.map(id => `<@${id}>`).join(' '));
+    const modlogs = await prismaClient.moderationLog.groupBy({
+      by: ['offenderID'],
+      where: {
+        offenderID: { in: ids.map(id => BigInt(id)) },
+      },
+    });
+
+    const idsWithModlogs = new Set(modlogs.map(log => log.offenderID.toString()));
+
+    await message.channel.send(
+      ids.map(id => `<@${id}>${idsWithModlogs.has(id) ? ' 💬' : ''}`).join(' '),
+    );
   }
 }
