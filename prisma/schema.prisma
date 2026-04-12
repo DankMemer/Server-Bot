@@ -213,6 +213,18 @@ model RegexChannel {
   @@index(guildID)
 }
 
+model BirthdayRole {
+  id BigInt @id @default(autoincrement())
+
+  userID  BigInt
+  guildID BigInt
+
+  expiresAt DateTime
+
+  @@unique([userID, guildID])
+  @@index(expiresAt)
+}
+
 model AllowedUrl {
   id BigInt @id @default(autoincrement())
 

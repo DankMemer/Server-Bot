@@ -87,6 +87,7 @@ export const CONFIG = {
           100: variable('IDS_ROLES_DMC_LEVEL_100', 'string'),
         },
         chad: variable('IDS_ROLES_DMC_CHAD', 'string'),
+        birthday: variable('IDS_ROLES_DMC_BIRTHDAY', 'string'),
       },
     },
     servers: {

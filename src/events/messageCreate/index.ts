@@ -1,6 +1,7 @@
 import { Message } from 'discord.js';
 import { getUser } from '../../utils/db';
 import { advancementsHandler } from './advancements';
+import { birthdayHandler } from './birthday';
 import { crosspostHandler } from './crosspost';
 import { linkHandler } from './links';
 import { listHandler } from './list';
@@ -23,5 +24,6 @@ export default async function messageCreate(message: Message): Promise<void> {
     usernameHandler(message, userEntry),
     xpHandler(message, userEntry),
     suggestionsHandler(message),
+    birthdayHandler(message),
   ]);
 }
