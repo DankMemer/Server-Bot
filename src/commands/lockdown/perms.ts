@@ -9,14 +9,17 @@ type PermissionFlag = keyof typeof PermissionFlagsBits;
 type PermissionDef = {
   token: PermissionToken;
   label: string;
-  flag: PermissionFlag;
+  textFlag: PermissionFlag;
+  forumFlag: PermissionFlag;
 };
 
+// On forum/media channels Discord's "Create Posts" UI toggle is gated by SEND_MESSAGES,
+// not CREATE_PUBLIC_THREADS — the latter is text-channel only and silently no-ops on forums.
 export const PERMISSION_DEFS: PermissionDef[] = [
-  { token: 'send_messages', label: 'Send messages', flag: 'SendMessages' },
-  { token: 'send_in_threads', label: 'Send messages in threads', flag: 'SendMessagesInThreads' },
-  { token: 'create_posts', label: 'Create posts', flag: 'CreatePublicThreads' },
-  { token: 'send_in_posts', label: 'Send messages in posts', flag: 'SendMessagesInThreads' },
+  { token: 'send_messages', label: 'Send messages', textFlag: 'SendMessages', forumFlag: 'SendMessages' },
+  { token: 'send_in_threads', label: 'Send messages in threads', textFlag: 'SendMessagesInThreads', forumFlag: 'SendMessagesInThreads' },
+  { token: 'create_posts', label: 'Create posts', textFlag: 'CreatePublicThreads', forumFlag: 'SendMessages' },
+  { token: 'send_in_posts', label: 'Send messages in posts', textFlag: 'SendMessagesInThreads', forumFlag: 'SendMessagesInThreads' },
 ];
 
 const TOKEN_TO_DEF = new Map<PermissionToken, PermissionDef>(
@@ -30,6 +33,10 @@ export const PERMISSION_CHOICES = PERMISSION_DEFS.map(def => ({
 
 export function isVoiceChannel(channel: GuildChannel): boolean {
   return channel.type === ChannelType.GuildVoice || channel.type === ChannelType.GuildStageVoice;
+}
+
+export function isForumChannel(channel: GuildChannel): boolean {
+  return channel.type === ChannelType.GuildForum;
 }
 
 export function tokenLabel(token: string | null): string {
@@ -46,7 +53,7 @@ export function tokenToFlag(token: string | null, channel: GuildChannel): Permis
   if (!def) {
     throw new Error(`Unknown lockdown permission token: ${token}`);
   }
-  return def.flag;
+  return isForumChannel(channel) ? def.forumFlag : def.textFlag;
 }
 
 export function resolveTargetID(rule: LockdownChannel, channel: GuildChannel): string {
