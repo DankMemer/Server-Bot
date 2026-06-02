@@ -68,7 +68,7 @@ async function sendMemberLog(embed: EmbedBuilder, guildID: string): Promise<void
 }
 
 function formatDankCommandCount(memerUser: MemerUser | null): string {
-  return memerUser ? memerUser.commands.toLocaleString() : 'Unknown';
+  return (memerUser?.commands ?? 0).toLocaleString();
 }
 
 function formatJoinedAt(member: GuildMember): string {

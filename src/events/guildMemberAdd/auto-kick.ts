@@ -37,7 +37,7 @@ export async function enforceNoDankCommands(member: GuildMember, memerUser?: Mem
     ? await memerClient.getUser(member.id)
     : memerUser;
 
-  if (resolvedMemerUser?.commands !== 0) {
+  if ((resolvedMemerUser?.commands ?? 0) !== 0) {
     return false;
   }
 
