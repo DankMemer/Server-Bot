@@ -29,7 +29,7 @@ export async function sendMemberJoinLog(member: GuildMember, memerUser: MemerUse
   await sendMemberLog(embed, member.guild.id);
 }
 
-export async function sendMemberLeaveLog(member: GuildMember, memerUser: MemerUser | null): Promise<void> {
+export async function sendMemberLeaveLog(member: GuildMember): Promise<void> {
   const embed = new EmbedBuilder()
     .setAuthor({
       name: member.user.username,
@@ -37,8 +37,8 @@ export async function sendMemberLeaveLog(member: GuildMember, memerUser: MemerUs
     })
     .setTitle('Member left')
     .setDescription(
-      `${member}\n` +
-      `Dank Commands: ${formatDankCommandCount(memerUser)}`,
+      `${member} ${formatJoinedAt(member)}\n` +
+      `**Roles:** ${formatRoles(member)}`,
     )
     .setFooter({ text: `ID: ${member.id}` })
     .setTimestamp()
@@ -69,6 +69,23 @@ async function sendMemberLog(embed: EmbedBuilder, guildID: string): Promise<void
 
 function formatDankCommandCount(memerUser: MemerUser | null): string {
   return memerUser ? memerUser.commands.toLocaleString() : 'Unknown';
+}
+
+function formatJoinedAt(member: GuildMember): string {
+  if (!member.joinedAt) {
+    return 'joined at an unknown time';
+  }
+
+  return `joined ${formatElapsedTime(HolyTime.since(member.joinedAt))} ago`;
+}
+
+function formatRoles(member: GuildMember): string {
+  const roles = [ ...member.roles.cache.values() ]
+    .filter(role => role.id !== member.guild.id)
+    .sort((a, b) => b.position - a.position)
+    .map(role => `${role}`);
+
+  return roles.length > 0 ? roles.join(' ') : 'None';
 }
 
 function formatOrdinal(value: number): string {
