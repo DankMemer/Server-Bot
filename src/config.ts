@@ -38,6 +38,7 @@ export const CONFIG = {
         prestigeOmegaHere: variable('IDS_CHANNELS_DMC_PRESTIGE_OMEGA_HERE', 'string'),
         vote: variable('IDS_CHANNELS_DMC_VOTE', 'string'),
         modLogs: variable('IDS_CHANNELS_DMC_MOD_LOGS', 'string'),
+        joinLeaveLogs: variable('IDS_CHANNELS_DMC_JOIN_LEAVE_LOGS', 'string', true),
         reports: variable('IDS_CHANNELS_DMC_REPORTS', 'string'),
         starboard: variable('IDS_CHANNELS_DMC_STARBOARD', 'string'),
         appeals: variable('IDS_CHANNELS_DMC_APPEALS', 'string'),

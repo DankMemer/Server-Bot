@@ -57,7 +57,7 @@ class Memer {
     this.items = response.data;
   }
 
-  public async getUser(id: string): Promise<MemerUser> {
+  public async getUser(id: string): Promise<MemerUser | null> {
     return axios(`${CONFIG.memer.apiUrl}/currency/inspect/user/${id}/main`, {
       headers: {
         Authorization: CONFIG.memer.token,
