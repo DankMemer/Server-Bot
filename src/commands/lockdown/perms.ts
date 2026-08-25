@@ -74,6 +74,31 @@ function bitfieldToOptions(allow: bigint, deny: bigint): PermissionOverwriteOpti
   return options as PermissionOverwriteOptions;
 }
 
+function denyOptionsForRules(rules: LockdownChannel[], channel: GuildChannel): Record<string, boolean> {
+  const denyOptions: Record<string, boolean> = {};
+  for (const rule of rules) {
+    const flag = tokenToFlag(rule.permission, channel);
+    denyOptions[flag] = false;
+  }
+  return denyOptions;
+}
+
+async function restoreOverwrite(
+  channel: GuildChannel,
+  targetID: string,
+  hadOverwrite: boolean,
+  allow: bigint,
+  deny: bigint,
+  reason: string,
+): Promise<void> {
+  if (!hadOverwrite) {
+    await channel.permissionOverwrites.delete(targetID, reason);
+    return;
+  }
+
+  await channel.permissionOverwrites.edit(targetID, bitfieldToOptions(allow, deny), { reason });
+}
+
 export async function lockRuleGroup(
   channel: GuildChannel,
   rules: LockdownChannel[],
@@ -88,25 +113,46 @@ export async function lockRuleGroup(
   const snapshotDeny = (existing?.deny.bitfield ?? 0n).toString();
   const hadOverwrite = !!existing;
 
-  const denyOptions: Record<string, boolean> = {};
-  for (const rule of rules) {
-    const flag = tokenToFlag(rule.permission, channel);
-    denyOptions[flag] = false;
-  }
+  const denyOptions = denyOptionsForRules(rules, channel);
 
   await channel.permissionOverwrites.edit(targetID, denyOptions, { reason });
 
-  await prismaClient.lockdownChannel.updateMany({
-    where: {
-      id: { in: rules.map(rule => rule.id) },
-    },
-    data: {
-      locked: true,
-      snapshotAllow,
-      snapshotDeny,
-      hadOverwrite,
-    },
-  });
+  try {
+    await prismaClient.lockdownChannel.updateMany({
+      where: {
+        id: { in: rules.map(rule => rule.id) },
+      },
+      data: {
+        locked: true,
+        snapshotAllow,
+        snapshotDeny,
+        hadOverwrite,
+      },
+    });
+  } catch (error) {
+    try {
+      await restoreOverwrite(
+        channel,
+        targetID,
+        hadOverwrite,
+        BigInt(snapshotAllow),
+        BigInt(snapshotDeny),
+        `${reason} (database rollback)`,
+      );
+    } catch (rollbackError) {
+      throw new AggregateError([error, rollbackError], 'Failed to save or roll back a lockdown permission change.');
+    }
+    throw error;
+  }
+
+  // Keep callers' rule objects aligned with the persisted state so a failed
+  // multi-channel operation can immediately roll this group back safely.
+  for (const rule of rules) {
+    rule.locked = true;
+    rule.snapshotAllow = snapshotAllow;
+    rule.snapshotDeny = snapshotDeny;
+    rule.hadOverwrite = hadOverwrite;
+  }
 }
 
 export async function unlockRuleGroup(
@@ -123,29 +169,86 @@ export async function unlockRuleGroup(
     .filter(rule => rule.locked)
     .sort((a, z) => z.updatedAt.getTime() - a.updatedAt.getTime())[0] ?? rules[0];
 
-  if (!source.hadOverwrite) {
-    const existing = channel.permissionOverwrites.cache.get(targetID);
-    if (existing) {
-      await channel.permissionOverwrites.delete(targetID, reason);
+  const allow = BigInt(source.snapshotAllow ?? '0');
+  const deny = BigInt(source.snapshotDeny ?? '0');
+  await restoreOverwrite(channel, targetID, source.hadOverwrite, allow, deny, reason);
+
+  try {
+    await prismaClient.lockdownChannel.updateMany({
+      where: {
+        id: { in: rules.map(rule => rule.id) },
+      },
+      data: {
+        locked: false,
+        snapshotAllow: null,
+        snapshotDeny: null,
+        hadOverwrite: false,
+      },
+    });
+  } catch (error) {
+    try {
+      await channel.permissionOverwrites.edit(
+        targetID,
+        denyOptionsForRules(rules, channel),
+        { reason: `${reason} (database rollback)` },
+      );
+    } catch (rollbackError) {
+      throw new AggregateError([error, rollbackError], 'Failed to save or roll back an unlock permission change.');
     }
-  } else {
-    const allow = BigInt(source.snapshotAllow ?? '0');
-    const deny = BigInt(source.snapshotDeny ?? '0');
-    const options = bitfieldToOptions(allow, deny);
-    await channel.permissionOverwrites.edit(targetID, options, { reason });
+    throw error;
   }
 
-  await prismaClient.lockdownChannel.updateMany({
-    where: {
-      id: { in: rules.map(rule => rule.id) },
-    },
-    data: {
-      locked: false,
-      snapshotAllow: null,
-      snapshotDeny: null,
-      hadOverwrite: false,
-    },
-  });
+  for (const rule of rules) {
+    rule.locked = false;
+    rule.snapshotAllow = null;
+    rule.snapshotDeny = null;
+    rule.hadOverwrite = false;
+  }
+}
+
+export async function relockRuleGroup(
+  channel: GuildChannel,
+  rules: LockdownChannel[],
+  reason: string,
+): Promise<void> {
+  if (rules.length === 0) return;
+
+  const targetID = resolveTargetID(rules[0], channel);
+  const source = [...rules]
+    .filter(rule => rule.locked)
+    .sort((a, z) => z.updatedAt.getTime() - a.updatedAt.getTime())[0] ?? rules[0];
+  const snapshotAllow = source.snapshotAllow ?? '0';
+  const snapshotDeny = source.snapshotDeny ?? '0';
+
+  await channel.permissionOverwrites.edit(targetID, denyOptionsForRules(rules, channel), { reason });
+
+  try {
+    await prismaClient.lockdownChannel.updateMany({
+      where: {
+        id: { in: rules.map(rule => rule.id) },
+      },
+      data: {
+        locked: true,
+        snapshotAllow,
+        snapshotDeny,
+        hadOverwrite: source.hadOverwrite,
+      },
+    });
+  } catch (error) {
+    try {
+      await restoreOverwrite(
+        channel,
+        targetID,
+        source.hadOverwrite,
+        BigInt(snapshotAllow),
+        BigInt(snapshotDeny),
+        `${reason} (database rollback)`,
+      );
+    } catch (rollbackError) {
+      throw new AggregateError([error, rollbackError], 'Failed to save or roll back a re-lock permission change.');
+    }
+    throw error;
+  }
 }
 
 export function groupRulesByRole(rules: LockdownChannel[]): Map<string, LockdownChannel[]> {
