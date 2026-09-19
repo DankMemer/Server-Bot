@@ -1,11 +1,14 @@
+import { ModerationLogType } from '@prisma/client';
 import { ActionRowBuilder, AuditLogEvent, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel } from 'discord.js';
 import HolyTime from 'holy-time';
 import { CONFIG } from '../../../config';
 import { Colors } from '../../../constants/colors';
 import { discordClient } from '../../../lib/discord-client';
+import { prismaClient } from '../../../lib/prisma-client';
 import { redisClient } from '../../../lib/redis-client';
 import { Modal, ModalContext } from '../../../structures/modal';
 import { ephemeralResponse } from '../../../utils/format';
+import { DiscordTimestampFormat, formatDiscordTimestamp } from '../../../utils/time';
 
 export class HelpDeskAppealModal extends Modal {
   public override id = 'helpdesk-appeal';
@@ -16,7 +19,20 @@ export class HelpDeskAppealModal extends Modal {
     const guild = discordClient.bot.guilds.resolve(CONFIG.ids.servers.dmc);
     const channel = discordClient.bot.channels.resolve(CONFIG.ids.channels.dmc.appeals) as TextChannel;
     const banReason = (await guild.bans.fetch(interaction.user.id).catch(() => null))?.reason ?? 'Unknown';
-
+    const banLog = await prismaClient.moderationLog.findFirst({
+      where: {
+        offenderID: BigInt(interaction.user.id),
+        guildID: BigInt(guild.id),
+        type: {
+          in: [ ModerationLogType.BAN, ModerationLogType.TEMP_BAN ],
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    });
+    const banDate = banLog
+      ? formatDiscordTimestamp(new HolyTime(banLog.createdAt), DiscordTimestampFormat.RELATIVE_TIME)
+      : 'Unknown';
 
     channel.send({
       content: interaction.user.id,
@@ -33,6 +49,10 @@ export class HelpDeskAppealModal extends Modal {
             {
               name: 'Ban Reason',
               value: banReason,
+            },
+            {
+              name: 'Ban Date',
+              value: banDate,
             },
           ],
         }),
