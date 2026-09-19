@@ -40,6 +40,8 @@ export function buildSupportMessage(userID: string, includeNevermind = false): M
   }
 
   return {
+    content: `<@${userID}>`,
+    allowedMentions: { users: [ userID ] },
     embeds: [
       new EmbedBuilder()
         .setDescription(`Hey, <@${userID}>, ${SUPPORT_MESSAGE}${nevermindText}`)
