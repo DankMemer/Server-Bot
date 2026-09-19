@@ -1,8 +1,11 @@
-import { ActionRowBuilder, ModalBuilder, SelectMenuInteraction, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ModalBuilder, SelectMenuInteraction, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { CONFIG } from '../../../config';
+import { discordClient } from '../../../lib/discord-client';
 import { redisClient } from '../../../lib/redis-client';
 import { Component, ComponentContext } from '../../../structures/component';
 import { ephemeralResponse } from '../../../utils/format';
 import { HELP_DESK_OPTIONS } from '../constants';
+import { buildSupportMessage, SUPPORT_CHANNEL_ID, supportCooldownKey } from '../support';
 
 export class HelpDeskOptionComponent extends Component {
   public override id = 'helpdesk-option';
@@ -33,11 +36,39 @@ export class HelpDeskOptionComponent extends Component {
       );
     }
 
-    if (option.role) {
-      const member = interaction.guild.members.resolve(interaction.user.id);
-      member.roles.add(option.role);
+    if (option.name === 'Other' && await redisClient.get(supportCooldownKey(interaction.user.id))) {
+      return void interaction.reply(ephemeralResponse('You must wait 5 minutes before returning to the support channel.'));
     }
 
-    interaction.reply(ephemeralResponse(option.response));
+    if (option.role) {
+      const isSupportOption = option.role === CONFIG.ids.roles.dmo.support;
+
+      if (isSupportOption) {
+        await interaction.deferReply({ ephemeral: true });
+      }
+
+      const member = await interaction.guild.members.fetch(interaction.user.id);
+      const alreadyHasRole = member.roles.cache.has(option.role);
+
+      await member.roles.add(option.role);
+
+      if (isSupportOption && !alreadyHasRole) {
+        try {
+          const supportChannel = await discordClient.bot.channels.fetch(SUPPORT_CHANNEL_ID) as TextChannel;
+
+          await supportChannel.send(buildSupportMessage(interaction.user.id, true));
+        } catch (error) {
+          await member.roles.remove(option.role);
+          throw error;
+        }
+      }
+
+      if (isSupportOption) {
+        await interaction.editReply({ embeds: ephemeralResponse(option.response).embeds });
+        return;
+      }
+    }
+
+    await interaction.reply(ephemeralResponse(option.response));
   }
 }

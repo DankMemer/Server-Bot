@@ -6,6 +6,7 @@ import { crosspostHandler } from './crosspost';
 import { linkHandler } from './links';
 import { listHandler } from './list';
 import { mediaChannelHandler } from './mediachannel';
+import { newPlayerHelpHandler } from './new-player-help';
 import { regexChannelHandler } from './regexchannels';
 import { suggestionsHandler } from './suggestions';
 import { usernameHandler } from './username';
@@ -20,6 +21,7 @@ export default async function messageCreate(message: Message): Promise<void> {
     listHandler(message),
     linkHandler(message),
     mediaChannelHandler(message),
+    newPlayerHelpHandler(message),
     regexChannelHandler(message),
     usernameHandler(message, userEntry),
     xpHandler(message, userEntry),
