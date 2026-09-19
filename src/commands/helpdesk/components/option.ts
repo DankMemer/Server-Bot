@@ -5,7 +5,7 @@ import { redisClient } from '../../../lib/redis-client';
 import { Component, ComponentContext } from '../../../structures/component';
 import { ephemeralResponse } from '../../../utils/format';
 import { HELP_DESK_OPTIONS } from '../constants';
-import { buildSupportMessage, SUPPORT_CHANNEL_ID, supportCooldownKey } from '../support';
+import { buildSupportMessage, SUPPORT_BLOCKED_ROLE_ID, SUPPORT_CHANNEL_ID, supportCooldownKey } from '../support';
 
 export class HelpDeskOptionComponent extends Component {
   public override id = 'helpdesk-option';
@@ -36,8 +36,16 @@ export class HelpDeskOptionComponent extends Component {
       );
     }
 
-    if (option.name === 'Other' && await redisClient.get(supportCooldownKey(interaction.user.id))) {
-      return void interaction.reply(ephemeralResponse('You must wait 5 minutes before returning to the support channel.'));
+    if (option.name === 'Other') {
+      const member = await interaction.guild.members.fetch(interaction.user.id);
+
+      if (member.roles.cache.has(SUPPORT_BLOCKED_ROLE_ID)) {
+        return void interaction.reply(ephemeralResponse('You are not able to access personal support anymore'));
+      }
+
+      if (await redisClient.get(supportCooldownKey(interaction.user.id))) {
+        return void interaction.reply(ephemeralResponse('You must wait 5 minutes before returning to the support channel.'));
+      }
     }
 
     if (option.role) {

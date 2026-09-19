@@ -10,6 +10,7 @@ import { Colors } from '../../constants/colors';
 export const NEW_PLAYER_HELP_CHANNEL_ID = '1404857819622019184';
 export const SUPPORT_CHANNEL_ID = '491466924799164426';
 export const SUPPORT_LOG_CHANNEL_ID = '1170347625069957201';
+export const SUPPORT_BLOCKED_ROLE_ID = '1303081410680061963';
 export const SUPPORT_COOLDOWN_SECONDS = 5 * 60;
 export const SUPPORT_COOLDOWN_KEY_PREFIX = 'support-cooldown';
 
