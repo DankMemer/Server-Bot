@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { CONFIG } from '../config';
+import { logger } from './logger';
 
 export type MemerItem = {
   id: number;
@@ -59,12 +60,16 @@ class Memer {
 
   public async getUser(id: string): Promise<MemerUser | null> {
     return axios(`${CONFIG.memer.apiUrl}/currency/inspect/user/${id}/main`, {
+      timeout: 5_000,
       headers: {
         Authorization: CONFIG.memer.token,
       },
     })
-      .then(response => response.data)
-      .catch(() => null);
+      .then(response => response.data ?? null)
+      .catch(error => {
+        logger.warn(`Failed to fetch Dank Memer user ${id}; skipping API-based join checks: ${error.message}`);
+        return null;
+      });
   }
 }
 

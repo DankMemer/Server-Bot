@@ -38,7 +38,8 @@ export async function enforceNoDankCommands(member: GuildMember, memerUser?: Mem
     ? await memerClient.getUser(member.id)
     : memerUser;
 
-  if ((resolvedMemerUser?.commands ?? 0) !== 0) {
+  // Only kick on a confirmed zero; unavailable API data must fail open.
+  if (resolvedMemerUser?.commands !== 0) {
     return false;
   }
 
@@ -62,7 +63,9 @@ export async function enforceBan(member: GuildMember, memerUser?: MemerUser | nu
     ? await memerClient.getUser(member.id)
     : memerUser;
 
-  if (!resolvedMemerUser?.banned?.is || HolyTime.between(HolyTime.now(), resolvedMemerUser.banned.until) <= HolyTime.Units.WEEK) {
+  const ban = resolvedMemerUser?.banned;
+
+  if (ban?.is !== true || !Number.isFinite(ban.until) || HolyTime.between(HolyTime.now(), ban.until) <= HolyTime.Units.WEEK) {
     return false;
   }
 
