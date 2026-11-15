@@ -4,13 +4,13 @@ import { CONFIG } from '../config';
 import { Colors } from '../constants/colors';
 import { discordClient } from '../lib/discord-client';
 import { logger } from '../lib/logger';
-import { MemerUser } from '../lib/memer-client';
+import { MemerUserLookup } from '../lib/memer-client';
 
 const MEMBER_LOG_CHANNEL_BY_GUILD: Record<string, string | null> = {
   [CONFIG.ids.servers.dmc]: CONFIG.ids.channels.dmc.joinLeaveLogs,
 };
 
-export async function sendMemberJoinLog(member: GuildMember, memerUser: MemerUser | null): Promise<void> {
+export async function sendMemberJoinLog(member: GuildMember, userLookup: MemerUserLookup): Promise<void> {
   const embed = new EmbedBuilder()
     .setAuthor({
       name: member.user.username,
@@ -20,7 +20,7 @@ export async function sendMemberJoinLog(member: GuildMember, memerUser: MemerUse
     .setDescription(
       `${member} ${formatOrdinal(member.guild.memberCount)} to join\n` +
       `created (${formatElapsedTime(HolyTime.since(member.user.createdAt))} ago)\n` +
-      `Dank Commands: ${formatDankCommandCount(memerUser)}`,
+      `Dank Commands: ${formatDankCommandCount(userLookup)}`,
     )
     .setFooter({ text: `ID: ${member.id}` })
     .setTimestamp()
@@ -67,8 +67,15 @@ async function sendMemberLog(embed: EmbedBuilder, guildID: string): Promise<void
   }
 }
 
-function formatDankCommandCount(memerUser: MemerUser | null): string {
-  return Number.isFinite(memerUser?.commands) ? memerUser.commands.toLocaleString() : 'Unavailable';
+function formatDankCommandCount(lookup: MemerUserLookup): string {
+  switch (lookup.status) {
+    case 'not-found':
+      return '0';
+    case 'found':
+      return lookup.user.commands.toLocaleString();
+    default:
+      return 'Unavailable';
+  }
 }
 
 function formatJoinedAt(member: GuildMember): string {

@@ -1,7 +1,7 @@
 import { GuildMember } from 'discord.js';
 import HolyTime from 'holy-time';
 import { logger } from '../../lib/logger';
-import { memerClient, MemerUser } from '../../lib/memer-client';
+import { memerClient, MemerUserLookup } from '../../lib/memer-client';
 
 const KICK_DM_REASONS = {
   newAccount: 'To combat abuse, your account is too new to join this server.',
@@ -29,17 +29,16 @@ export async function enforceNoNewAccounts(member: GuildMember): Promise<boolean
   return true;
 }
 
-export async function enforceNoDankCommands(member: GuildMember, memerUser?: MemerUser | null): Promise<boolean> {
+export async function enforceNoDankCommands(member: GuildMember, userLookup?: MemerUserLookup): Promise<boolean> {
   if (!isMemberStillInGuild(member)) {
     return false;
   }
 
-  const resolvedMemerUser = memerUser === undefined
-    ? await memerClient.getUser(member.id)
-    : memerUser;
+  const lookup = userLookup ?? await memerClient.getUser(member.id);
+  const isNonPlayer = lookup.status === 'not-found' ||
+    (lookup.status === 'found' && lookup.user.commands === 0);
 
-  // Only kick on a confirmed zero; unavailable API data must fail open.
-  if (resolvedMemerUser?.commands !== 0) {
+  if (!isNonPlayer) {
     return false;
   }
 
@@ -54,16 +53,13 @@ export async function enforceNoDankCommands(member: GuildMember, memerUser?: Mem
   return true;
 }
 
-export async function enforceBan(member: GuildMember, memerUser?: MemerUser | null): Promise<boolean> {
+export async function enforceBan(member: GuildMember, userLookup?: MemerUserLookup): Promise<boolean> {
   if (!isMemberStillInGuild(member)) {
     return false;
   }
 
-  const resolvedMemerUser = memerUser === undefined
-    ? await memerClient.getUser(member.id)
-    : memerUser;
-
-  const ban = resolvedMemerUser?.banned;
+  const lookup = userLookup ?? await memerClient.getUser(member.id);
+  const ban = lookup.status === 'found' ? lookup.user.banned : null;
 
   if (ban?.is !== true || !Number.isFinite(ban.until) || HolyTime.between(HolyTime.now(), ban.until) <= HolyTime.Units.WEEK) {
     return false;

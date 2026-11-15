@@ -41,6 +41,11 @@ export type MemerUser = {
   };
 };
 
+export type MemerUserLookup =
+  | { status: 'found'; user: MemerUser }
+  | { status: 'not-found' }
+  | { status: 'unavailable' };
+
 class Memer {
   public items: MemerItem[] = [];
 
@@ -58,17 +63,28 @@ class Memer {
     this.items = response.data;
   }
 
-  public async getUser(id: string): Promise<MemerUser | null> {
-    return axios(`${CONFIG.memer.apiUrl}/currency/inspect/user/${id}/main`, {
+  public async getUser(id: string): Promise<MemerUserLookup> {
+    return axios<MemerUser>(`${CONFIG.memer.apiUrl}/currency/inspect/user/${id}/main`, {
       timeout: 5_000,
       headers: {
         Authorization: CONFIG.memer.token,
       },
     })
-      .then(response => response.data ?? null)
-      .catch(error => {
+      .then((response): MemerUserLookup => {
+        if (!Number.isFinite(response.data?.commands) || response.data.commands < 0) {
+          logger.warn(`Invalid Dank Memer user data for ${id}; skipping API-based join checks`);
+          return { status: 'unavailable' };
+        }
+
+        return { status: 'found', user: response.data };
+      })
+      .catch((error): MemerUserLookup => {
+        if (axios.isAxiosError(error) && error.response?.status === 404 && error.response.data?.error === 'User not found') {
+          return { status: 'not-found' };
+        }
+
         logger.warn(`Failed to fetch Dank Memer user ${id}; skipping API-based join checks: ${error.message}`);
-        return null;
+        return { status: 'unavailable' };
       });
   }
 }
