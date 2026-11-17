@@ -102,7 +102,7 @@ function fakeGuild({ guildId = `guild-${++guildNumber}`, initial = {}, beforeCha
 }
 
 function serialize(reply) {
-  return { ...reply, components: reply.components.map(component => component.toJSON()) };
+  return JSON.parse(JSON.stringify(reply));
 }
 
 function menus(reply) {

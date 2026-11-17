@@ -12,13 +12,15 @@ yarn install --frozen-lockfile
 npm run sync
 ```
 
-Then restart the bot using your usual process manager. The dependency installation updates the Discord library and project compiler needed for the `/roles` menu's grouped layout. Node.js 18.17 or newer is required.
+Then restart the bot using your usual process manager. The dependency installation adds DisUI and updates the Discord library and project compiler needed for the `/roles` menu's grouped layout. Node.js 18.17 or newer is required.
 
 `npm run sync` compiles TypeScript using the project compiler and registers this bot's commands in the configured servers. Check for `Registered slash commands for '<server ID>'` in its output. If you prefer separate steps, run `yarn tsc` followed by `node dist/scripts/sync.js`. Run command syncing when adding or changing a command's definition; ordinary implementation changes only need compilation and a restart.
 
 ## Notification roles
 
 Anyone in Dank Memer Community can use `/roles` to open a private menu with three groups: Dank Memer Roles, Bot Event Roles, and Server Roles. Existing roles are preselected. Select roles to enable their pings, deselect them to disable pings, or clear a dropdown to disable all roles shown in that group. Each dropdown saves automatically and only changes that group.
+
+The Components V2 menu is built with [DisUI](https://github.com/badosz0/DisUI), including its headings, containers, and dropdowns. DisUI resolves the interface into the API components sent by discord.js.
 
 Role names are read from Discord. The bot needs **Manage Roles**, and its highest role must be above every notification role. Missing, managed, or higher roles are omitted with an availability notice.
 

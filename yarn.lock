@@ -789,7 +789,7 @@ dir-glob@^3.0.1:
   dependencies:
     path-type "^4.0.0"
 
-discord-api-types@^0.38.1, discord-api-types@^0.38.33, discord-api-types@^0.38.50:
+discord-api-types@^0.38.1, discord-api-types@^0.38.33, discord-api-types@^0.38.48, discord-api-types@^0.38.50:
   version "0.38.59"
   resolved "https://registry.yarnpkg.com/discord-api-types/-/discord-api-types-0.38.59.tgz#a58195791d14a153d99bb34d5fae5e6329dbb957"
   integrity sha512-LZqh8gvWU/Bhl9qEVIRLeLJuaPGO7rA26IXLrXnMcjXxofh/h5UhP6notfCTj4X5kR1ogMvVgcrVYIuynY/CxQ==
@@ -812,6 +812,13 @@ discord.js@14.19.3:
     magic-bytes.js "^1.10.0"
     tslib "^2.6.3"
     undici "6.21.1"
+
+disui@0.8.1:
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/disui/-/disui-0.8.1.tgz#333d0815d10e93546a83b6e409189b47143c3504"
+  integrity sha512-ixfb96Lp14bXM8Ka4Hxz8grnUMHchtyRxjiJEZTVE02JADmxVSECS6t6qDINjgTZ4YwNOiCcjfGlde0seKyAfA==
+  dependencies:
+    discord-api-types "^0.38.48"
 
 doctrine@^2.1.0:
   version "2.1.0"
