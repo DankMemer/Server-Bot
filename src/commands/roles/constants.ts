@@ -1,3 +1,5 @@
+import { DEFAULT_NOTIFICATION_ROLE_ID } from '../../constants/notification-roles';
+
 export type NotificationRoleGroup = {
   id: string;
   title: string;
@@ -13,7 +15,7 @@ export const NOTIFICATION_ROLE_GROUPS: NotificationRoleGroup[] = [
     title: 'Dank Memer Roles',
     description: 'Choose which Dank Memer news, sneak peeks, and votes you want to hear about.',
     roles: [
-      { id: '1283084915579027468', description: 'Get pinged for important Dank Memer news and new updates.' },
+      { id: DEFAULT_NOTIFICATION_ROLE_ID, description: 'Get pinged for important Dank Memer news and new updates.' },
       { id: '1161479598056419359', description: 'Get pinged for sneak peeks of upcoming Dank Memer changes before they are ready.' },
       { id: '929894637898973194', description: 'Get pinged when there is something to vote on in the voting channel.' },
     ],

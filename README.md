@@ -20,6 +20,8 @@ Then restart the bot using your usual process manager, for example `pm2 restart 
 
 Anyone in Dank Memer Community can use `/roles` to open a private menu with three groups: Dank Memer Roles, Bot Event Roles, and Server Roles. Existing roles are preselected. Select roles to enable their pings, deselect them to disable pings, or clear a dropdown to disable all roles shown in that group. Each dropdown saves automatically and only changes that group.
 
+New DMC members who pass the existing join checks automatically receive the Dank Memer news/update notification role (`1283084915579027468`). They can turn it off through `/roles` afterward.
+
 The Components V2 menu is built with [DisUI](https://github.com/badosz0/DisUI), including its headings, containers, and dropdowns. DisUI resolves the interface into the API components sent by discord.js.
 
 Role names are read from Discord. The bot needs **Manage Roles**, and its highest role must be above every notification role. Missing, managed, or higher roles are omitted with an availability notice.

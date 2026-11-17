@@ -3,6 +3,7 @@ import { memerClient } from '../../lib/memer-client';
 import { sendMemberJoinLog } from '../../utils/member-log';
 import { enforceFrozenNickname } from '../guildMemberUpdate/frozen-nickname';
 import { enforceBan, enforceNoDankCommands, enforceNoNewAccounts } from './auto-kick';
+import { assignDefaultNotificationRole } from './default-role';
 
 export default async function guildMemberAdd(member: GuildMember): Promise<void> {
   const userLookup = await memerClient.getUser(member.id);
@@ -21,5 +22,6 @@ export default async function guildMemberAdd(member: GuildMember): Promise<void>
     return;
   }
 
+  await assignDefaultNotificationRole(member);
   await enforceFrozenNickname(member);
 }

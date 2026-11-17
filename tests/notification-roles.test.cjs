@@ -32,6 +32,7 @@ const { queueNotificationRoleUpdate } = require('../dist/commands/roles/queue');
 const { buildNotificationRolesReply } = require('../dist/commands/roles/ui');
 const { RolesCommand } = require('../dist/commands/roles/command');
 const { NotificationRolesSelectComponent } = require('../dist/commands/roles/components/select');
+const { assignDefaultNotificationRole } = require('../dist/events/guildMemberAdd/default-role');
 
 const ids = group => group.roles.map(role => role.id);
 const [news, events, server] = NOTIFICATION_ROLE_GROUPS;
@@ -467,4 +468,66 @@ test('the production command loader discovers /roles and every command definitio
   `], { cwd: resolve(__dirname, '..'), encoding: 'utf8', timeout: 20000 });
 
   assert.equal(result.status, 0, result.error?.message ?? result.stderr + result.stdout);
+});
+
+test('new DMC members receive only the default news role and can opt out afterward', async () => {
+  const fake = fakeGuild({ guildId: 'dmc', initial: { user: ['existing-role', events.roles[0].id] } });
+  await assignDefaultNotificationRole(fake.member('user'));
+  assert.deepEqual(fake.changes, [{ action: 'add', userId: 'user', roleId: '1283084915579027468' }]);
+  assert.deepEqual(fake.current('user'), new Set(['existing-role', events.roles[0].id, news.roles[0].id]));
+
+  await queueNotificationRoleUpdate(fake.guild, 'user', news.id, ids(news), []);
+  assert.deepEqual(fake.current('user'), new Set(['existing-role', events.roles[0].id]));
+});
+
+test('the join default skips other guilds and members who already have the role', async () => {
+  const otherGuild = fakeGuild({ guildId: 'other-guild' });
+  await assignDefaultNotificationRole(otherGuild.member('user'));
+  assert.deepEqual(otherGuild.changes, []);
+
+  const existing = fakeGuild({ guildId: 'dmc', initial: { user: [news.roles[0].id] } });
+  await assignDefaultNotificationRole(existing.member('user'));
+  assert.deepEqual(existing.changes, []);
+});
+
+test('the join flow assigns the default after admission checks and handles role failures without skipping nickname enforcement', async () => {
+  const trace = [];
+  let rejectAt;
+  function stubModule(relativePath, exports) {
+    const filename = require.resolve(relativePath);
+    require.cache[filename] = { id: filename, filename, loaded: true, exports };
+  }
+  stubModule('../dist/lib/memer-client', {
+    memerClient: { async getUser() { trace.push('lookup'); return { status: 'unavailable' }; } },
+  });
+  stubModule('../dist/utils/member-log', { async sendMemberJoinLog() { trace.push('log'); } });
+  stubModule('../dist/events/guildMemberAdd/auto-kick', {
+    async enforceNoNewAccounts() { trace.push('new-account'); return rejectAt === 'new-account'; },
+    async enforceNoDankCommands() { trace.push('no-commands'); return rejectAt === 'no-commands'; },
+    async enforceBan() { trace.push('ban'); return rejectAt === 'ban'; },
+  });
+  stubModule('../dist/events/guildMemberUpdate/frozen-nickname', {
+    async enforceFrozenNickname() { trace.push('nickname'); },
+  });
+  const guildMemberAdd = require('../dist/events/guildMemberAdd').default;
+
+  const accepted = fakeGuild({ guildId: 'dmc', beforeChange() { trace.push('role'); } });
+  await guildMemberAdd(accepted.member('user'));
+  assert.deepEqual(trace, ['lookup', 'log', 'new-account', 'no-commands', 'ban', 'role', 'nickname']);
+
+  for (const check of ['new-account', 'no-commands', 'ban']) {
+    rejectAt = check;
+    trace.length = 0;
+    const rejected = fakeGuild({ guildId: 'dmc' });
+    await guildMemberAdd(rejected.member('user'));
+    assert.deepEqual(rejected.changes, []);
+    assert.ok(!trace.includes('nickname'));
+  }
+
+  rejectAt = undefined;
+  trace.length = 0;
+  const failed = fakeGuild({ guildId: 'dmc', beforeChange() { trace.push('role'); throw new Error('Missing permissions'); } });
+  await guildMemberAdd(failed.member('user'));
+  assert.deepEqual(trace, ['lookup', 'log', 'new-account', 'no-commands', 'ban', 'role', 'nickname']);
+  assert.ok(!failed.current('user').has(news.roles[0].id));
 });
