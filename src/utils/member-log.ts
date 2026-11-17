@@ -56,7 +56,7 @@ async function sendMemberLog(embed: EmbedBuilder, guildID: string): Promise<void
 
   const memberLog = discordClient.bot.channels.resolve(channelID);
 
-  if (!memberLog?.isTextBased()) {
+  if (!memberLog?.isSendable()) {
     return;
   }
 

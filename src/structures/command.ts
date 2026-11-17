@@ -1,5 +1,5 @@
 import { User } from '@prisma/client';
-import { AutocompleteInteraction, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder } from 'discord.js';
+import { AutocompleteInteraction, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder } from 'discord.js';
 import { Promisable } from 'type-fest';
 
 export type CommandContext = {
@@ -18,7 +18,7 @@ export type AutocompleteReturnable = Array<{
 }>; // TODO: discord.js probably has a type for it
 
 export abstract class Command {
-  public data: SlashCommandBuilder | Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'> | SlashCommandSubcommandsOnlyBuilder; // TODO: this is getting weird;
+  public data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder | SlashCommandSubcommandsOnlyBuilder;
   public servers: string[];
 
   // TODO: i hate this

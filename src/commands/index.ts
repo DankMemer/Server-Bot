@@ -10,10 +10,10 @@ export const Paginators = new Map<string, Paginator>();
 export const Components = new Map<string, Component>();
 export const Modals = new Map<string, Modal>();
 
-const filenames = sync(resolve(__dirname, '**/*.js'));
+const filenames = sync('**/*.js', { cwd: __dirname, absolute: true });
 
 for (const filename of filenames) {
-  if (filename === __filename) {
+  if (resolve(filename) === __filename) {
     continue;
   }
 

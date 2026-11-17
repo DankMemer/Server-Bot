@@ -48,7 +48,7 @@ export async function commandsHandler(interaction: Interaction, userEntry: User)
   }
 }
 
-async function replyInteraction(interaction: ChatInputCommandInteraction, embedData: InteractionReplyOptions): Promise<void> {
+async function replyInteraction(interaction: ChatInputCommandInteraction, embedData: Pick<InteractionReplyOptions, 'embeds'>): Promise<void> {
   if (interaction.deferred) {
     await interaction.editReply(embedData);
   } else {

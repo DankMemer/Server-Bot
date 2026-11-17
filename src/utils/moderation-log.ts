@@ -19,7 +19,7 @@ export async function sendModerationLog(embed: EmbedBuilder, guildID: string): P
 
   const moderationLog = discordClient.bot.channels.resolve(channelID);
 
-  if (moderationLog?.isTextBased()) {
+  if (moderationLog?.isSendable()) {
     await moderationLog.send({ embeds: [ embed ] });
   }
 }
