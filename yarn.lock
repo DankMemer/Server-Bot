@@ -245,45 +245,6 @@
   resolved "https://registry.yarnpkg.com/@sapphire/snowflake/-/snowflake-3.5.5.tgz#33a60ab4231e3cab29e8a0077f342125f2c8d1bd"
   integrity sha512-xzvBr1Q1c4lCe7i6sRnrofxeO1QTP/LKQ6A6qy0iB4x5yfiSfARMEQEghojzTNALDTcv8En04qYNIco9/K9eZQ==
 
-"@sentry-internal/tracing@7.95.0":
-  version "7.95.0"
-  resolved "https://registry.npmjs.org/@sentry-internal/tracing/-/tracing-7.95.0.tgz"
-  integrity sha512-YKiLPMnEgTsTh7u/W1Zep9HtV1rJqAetqJ4ekaIxyUUB6ppi6V00MacSjb01o++fwlNNDYFxNpJlgQqNPqsCNA==
-  dependencies:
-    "@sentry/core" "7.95.0"
-    "@sentry/types" "7.95.0"
-    "@sentry/utils" "7.95.0"
-
-"@sentry/core@7.95.0":
-  version "7.95.0"
-  resolved "https://registry.npmjs.org/@sentry/core/-/core-7.95.0.tgz"
-  integrity sha512-z+ffO6jK/ZUxnRbBGmnj5sOouKZ4mvRY0KJa33kbyqcmeiJKrN81M7Ecj1IJUCamo/6RqX0GCwDDxgUPZZZBwA==
-  dependencies:
-    "@sentry/types" "7.95.0"
-    "@sentry/utils" "7.95.0"
-
-"@sentry/node@^7.95.0":
-  version "7.95.0"
-  resolved "https://registry.npmjs.org/@sentry/node/-/node-7.95.0.tgz"
-  integrity sha512-3fbN+4ajPly9rhbuJtuZ+o2FGmka8Y7A3T/ooHuhCGoWegKtn3OzaOIrdwcYoBIy1fO6SuldTi/P72Y7wgIPtw==
-  dependencies:
-    "@sentry-internal/tracing" "7.95.0"
-    "@sentry/core" "7.95.0"
-    "@sentry/types" "7.95.0"
-    "@sentry/utils" "7.95.0"
-
-"@sentry/types@7.95.0":
-  version "7.95.0"
-  resolved "https://registry.npmjs.org/@sentry/types/-/types-7.95.0.tgz"
-  integrity sha512-ouU7NsEcrwmcnXHMNBGmKZEmKMzmgPGoBydZn1gukCI67Ci71fAYpPNrbtmjai6+jtsY21o45rVLqExru2sdfw==
-
-"@sentry/utils@7.95.0":
-  version "7.95.0"
-  resolved "https://registry.npmjs.org/@sentry/utils/-/utils-7.95.0.tgz"
-  integrity sha512-0zget8AOaQWLIEA9cTx/qiQQYpx2x0UfnaW5xRmQg12QGTSngo/cUm9O04zuHw5gpBBGG0ocMDHxwwr+UCCBiw==
-  dependencies:
-    "@sentry/types" "7.95.0"
-
 "@types/fuzzy-search@^2.1.2":
   version "2.1.2"
   resolved "https://registry.npmjs.org/@types/fuzzy-search/-/fuzzy-search-2.1.2.tgz"

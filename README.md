@@ -8,13 +8,13 @@ Run these commands from the bot directory on the server, with the usual producti
 
 ```sh
 git pull
-yarn install --frozen-lockfile
+npm install
 npm run sync
 ```
 
-Then restart the bot using your usual process manager. The dependency installation adds DisUI and updates the Discord library and project compiler needed for the `/roles` menu's grouped layout. Node.js 18.17 or newer is required.
+Then restart the bot using your usual process manager, for example `pm2 restart server-bot`. Install dependencies before compiling to pick up the libraries and project compiler used by `/roles`. Node.js 18.17 or newer is required.
 
-`npm run sync` compiles TypeScript using the project compiler and registers this bot's commands in the configured servers. Check for `Registered slash commands for '<server ID>'` in its output. If you prefer separate steps, run `yarn tsc` followed by `node dist/scripts/sync.js`. Run command syncing when adding or changing a command's definition; ordinary implementation changes only need compilation and a restart.
+`npm run sync` compiles TypeScript using the project compiler and registers this bot's commands in the configured servers. Check for `Registered slash commands for '<server ID>'` in its output. If you prefer separate steps, run `npx tsc` followed by `node dist/scripts/sync.js`. Run command syncing when adding or changing a command's definition; ordinary implementation changes only need compilation and a restart.
 
 ## Notification roles
 
